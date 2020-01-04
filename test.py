@@ -20,7 +20,7 @@ from torch.nn import DataParallel
 
 def load_bin(path, image_size):
     bins, issame_list = pickle.load(open(path, 'rb'), encoding='bytes')
-    data = np.zeros((len(issame_list) * 2, 3, image_size[0], image_size[1]))
+    data = np.zeros((len(issame_list) * 2, image_size[0], image_size[1]), 3)
 
     for i in range(len(issame_list) * 2):
         _bin = bins[i]
@@ -30,7 +30,7 @@ def load_bin(path, image_size):
             img = cv2.resize(img, image_size)
         data[i][:] = img
         if i % 1000 == 0:
-            print('loading bin', i)
+            logging.info('loading bin %s', i)
     return (data, issame_list)
 
 
