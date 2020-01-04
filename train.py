@@ -339,61 +339,60 @@ def train_net(args):
     real_acc_metric = AccMetric(True)
     noise = Noise(file_path, len(trainloader))
     for epoch in range(max_epoch):
-        model.train()
+        if not args.only_val:
+            model.train()
+            for ii, data in enumerate(trainloader):
+                iters = epoch * len(trainloader) + ii
 
-        for ii, data in enumerate(trainloader):
-            iters = epoch * len(trainloader) + ii
+                data_input, label = data
+                data_input = data_input.to(device)
+                label = label.to(device).long()
+                feature = model(data_input)
+                cosine, output = metric_fc(feature, label)
+                loss = criterion(output, label)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            data_input, label = data
-            data_input = data_input.to(device)
-            label = label.to(device).long()
-            feature = model(data_input)
-            cosine, output = metric_fc(feature, label)
-            loss = criterion(output, label)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                # add metrics
+                label = label.data.cpu().numpy()
+                loss_metric.update_loss(loss.item())
+                cosine = cosine.data.cpu().numpy()
+                output = output.data.cpu().numpy()
+                acc_metric.update(label, output)
+                real_acc_metric.update(label, cosine)
 
-            # add metrics
-            label = label.data.cpu().numpy()
-            loss_metric.update_loss(loss.item())
-            cosine = cosine.data.cpu().numpy()
-            output = output.data.cpu().numpy()
-            acc_metric.update(label, output)
-            real_acc_metric.update(label, cosine)
+                consine_list = np.zeros_like(label, dtype=np.float32)
+                for i, c in enumerate(cosine):
+                    consine_list[i] = c[label[i]]
+                mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
+                theta_metric.update_mean_deg(mean_deg)
+                noise.append_cosine(consine_list, iters)
 
-            consine_list = np.zeros_like(label, dtype=np.float32)
-            for i, c in enumerate(cosine):
-                consine_list[i] = c[label[i]]
-            logging.info("consine_list ")
-            mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
-            theta_metric.update_mean_deg(mean_deg)
-            noise.append_cosine(consine_list, iters)
+                if iters % args.print_freq == 0:
+                    mean_loss = loss_metric.get_value()
+                    mean_theta = theta_metric.get_value()
+                    acc = acc_metric.get_value()
+                    real_acc = real_acc_metric.get_value()
 
-            if iters % args.print_freq == 0:
-                mean_loss = loss_metric.get_value()
-                mean_theta = theta_metric.get_value()
-                acc = acc_metric.get_value()
-                real_acc = real_acc_metric.get_value()
+                    cost = (time.time() - start) / 3600
+                    left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
+                    speed = args.batch_size * (iters + 1) / (time.time() - start)
+                    time_str = time.asctime(time.localtime(time.time()))
+                    logging.info('time %s train lr %.02f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f speed %.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
+                                 time_str, optimizer.param_groups[0]['lr'], epoch, max_epoch, ii, len(trainloader), iters, cost, left, speed, mean_loss, mean_theta, acc, real_acc)
 
-                cost = (time.time() - start) / 3600
-                left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
-                speed = args.batch_size * (iters + 1) / (time.time() - start)
-                time_str = time.asctime(time.localtime(time.time()))
-                logging.info('time %s train lr %.02f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f speed %.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
-                             time_str, optimizer.param_groups[0]['lr'], epoch, max_epoch, ii, len(trainloader), iters, cost, left, speed, mean_loss, mean_theta, acc, real_acc)
+                    if args.display:
+                        visualizer.display_current_results(iters, mean_loss, name='train_loss')
+                        visualizer.display_current_results(iters, acc, name='train_acc')
+                    sw.add_scalar("loss", mean_loss, iters)
+                    sw.add_scalar("theta", mean_theta, iters)
+                    sw.add_scalar("acc", acc, iters)
+                    sw.add_scalar("real_acc", real_acc, iters)
 
-                if args.display:
-                    visualizer.display_current_results(iters, mean_loss, name='train_loss')
-                    visualizer.display_current_results(iters, acc, name='train_acc')
-                sw.add_scalar("loss", mean_loss, iters)
-                sw.add_scalar("theta", mean_theta, iters)
-                sw.add_scalar("acc", acc, iters)
-                sw.add_scalar("real_acc", real_acc, iters)
-
-        noise.save_epoch(epoch)
-        save_model(model, metric_fc, file_path, args.network, epoch)
-        scheduler.step()
+            noise.save_epoch(epoch)
+            save_model(model, metric_fc, file_path, args.network, epoch)
+            scheduler.step()
 
         if args.target:
             model.eval()
