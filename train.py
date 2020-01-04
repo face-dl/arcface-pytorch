@@ -106,7 +106,7 @@ class LossMetric(EvalMetric):
 
 
 class ThetaMetric(EvalMetric):
-    def __init__(self, is_real):
+    def __init__(self):
         super(ThetaMetric, self).__init__("theta")
 
     def update(self, labels, cosine):
