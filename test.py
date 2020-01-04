@@ -53,7 +53,7 @@ def get_featurs(model, images_lists, batch_size=10):
         else:
             features = np.vstack((features, feature))
             # logging.info("index/count %s/%s", index, count)
-    logging.info("features shape %s", feature.shape)
+    logging.info("features shape %s", features.shape)
     return features
 
 
@@ -105,7 +105,6 @@ def lfw_test(model, path, batch_size):
     s = time.time()
     images, issame_list = load_bin(path, [112, 112])
     features = get_featurs(model, images, batch_size=batch_size)
-    print(features.shape)
     t = time.time() - s
     logging.info('total time is {}'.format(t))
     acc, th = test_performance(features, issame_list)
