@@ -324,9 +324,13 @@ def train_net(args):
         optimizer = torch.optim.Adam([{'params': model.parameters()}, {'params': metric_fc.parameters()}], lr=args.lr, weight_decay=args.weight_decay)
 
     lr_steps = [int(x) for x in args.lr_steps.split(',')]
+    logging.info("lr_steps %s", lr_steps)
     scheduler = MultiStepLR(optimizer, milestones=lr_steps, gamma=0.1)
 
-    max_epoch = 2 * lr_steps[-1] - lr_steps[-2]
+    if len(lr_steps) == 1:
+        max_epoch = lr_steps[0] * 2
+    else:
+        max_epoch = 2 * lr_steps[-1] - lr_steps[-2]
     start = time.time()
     loss_metric = LossMetric()
     theta_metric = ThetaMetric()
@@ -368,7 +372,7 @@ def train_net(args):
                 left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
                 logging.info('time %s train lr %s epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
-                             time_str, scheduler.get_lr(), i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
+                             time_str, optimizer.param_groups(), i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
                     visualizer.display_current_results(iters, mean_loss, name='train_loss')
