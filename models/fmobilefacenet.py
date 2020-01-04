@@ -1,9 +1,5 @@
-from torch.nn import Linear, Conv2d, BatchNorm1d, BatchNorm2d, PReLU, ReLU, Sigmoid, Dropout2d, Dropout, AvgPool2d, MaxPool2d, AdaptiveAvgPool2d, Sequential, Module, Parameter
-import torch.nn.functional as F
 import torch
-from collections import namedtuple
-import math
-import pdb
+from torch.nn import Linear, Conv2d, BatchNorm1d, BatchNorm2d, PReLU, Sequential, Module
 
 
 ##################################  Original Arcface Model #############################################################
@@ -118,6 +114,6 @@ class MobileFaceNet(Module):
         return l2_norm(out)
 
 
-def resnet_face18(args):
-    model = MobileFaceNet(args.emb_size)
+def resnet_face18(emb_size):
+    model = MobileFaceNet(emb_size)
     return model

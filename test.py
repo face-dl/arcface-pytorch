@@ -15,7 +15,6 @@ import time
 import cv2
 import numpy as np
 import torch
-from torch.nn import DataParallel
 
 
 def load_bin(path, image_size):
@@ -113,22 +112,14 @@ def lfw_test(model, path, batch_size):
 
 
 if __name__ == '__main__':
+    from models import fmobilefacenet
 
-    opt = Config()
-    if opt.backbone == 'resnet18':
-        model = resnet_face18(opt.use_se)
-    elif opt.backbone == 'resnet34':
-        model = resnet34()
-    elif opt.backbone == 'resnet50':
-        model = resnet50()
-
-    model = DataParallel(model)
-    # load_model(model, opt.test_model_path)
-    model.load_state_dict(torch.load(opt.test_model_path))
+    model = fmobilefacenet.resnet_face18(512)
+    pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
+    pretrained, iter_cnt = pretrained.split(",")
+    model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
     model.to(torch.device("cuda"))
 
-    identity_list = get_lfw_list(opt.lfw_test_list)
-    img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
-
     model.eval()
-    lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
+    target = os.path.expanduser("~/datasets/maysa/lfw.bin")
+    lfw_test(model, target, 64)

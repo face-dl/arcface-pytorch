@@ -292,7 +292,7 @@ def train_net(args):
         criterion = torch.nn.CrossEntropyLoss()
 
     if args.network == 'resnet18':
-        model = fmobilefacenet.resnet_face18(args=args)
+        model = fmobilefacenet.resnet_face18(emb_size=args.emb_size)
     elif args.network == 'resnet34':
         model = resnet.resnet34()
     elif args.network == 'resnet50':
@@ -379,7 +379,7 @@ def train_net(args):
                     left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                     speed = args.batch_size * (iters + 1) / (time.time() - start)
                     time_str = time.asctime(time.localtime(time.time()))
-                    logging.info('time %s train lr %.02f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f speed %.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
+                    logging.info('time %s train lr %.07f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f speed %.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
                                  time_str, optimizer.param_groups[0]['lr'], epoch, max_epoch, ii, len(trainloader), iters, cost, left, speed, mean_loss, mean_theta, acc, real_acc)
 
                     if args.display:
