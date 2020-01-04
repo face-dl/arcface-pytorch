@@ -35,13 +35,11 @@ def load_bin(path, image_size):
 
 
 def get_featurs(model, images_lists, batch_size=10):
-    images = None
     features = None
     cnt = 0
     count = math.ceil(len(images_lists) / batch_size)
     for index in range(count):
         images = images_lists[index * batch_size:(index + 1) * batch_size, ...]
-
         data = torch.from_numpy(images)
         data = data.to(torch.device("cuda"))
         output = model(data)
@@ -50,13 +48,12 @@ def get_featurs(model, images_lists, batch_size=10):
         fe_1 = output[::2]
         fe_2 = output[1::2]
         feature = np.hstack((fe_1, fe_2))
-        logging.info("feature shape %s", feature.shape)
 
         if features is None:
             features = feature
         else:
             features = np.vstack((features, feature))
-        logging.info("features shape %s", feature.shape)
+    logging.info("features shape %s", feature.shape)
     return features, cnt
 
 
