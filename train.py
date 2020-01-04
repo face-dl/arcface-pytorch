@@ -228,15 +228,15 @@ def train_net(args):
         metric_fc = nn.Linear(512, args.num_classes)
 
     # view_model(model, opt.input_shape)
-    if args.pretrained:
-        pretrained, iter_cnt = args.pretrained.split(",")
-        model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
-        metric_fc.load_state_dict(torch.load(pretrained + '_weight_' + str(iter_cnt) + '.pth'))
     # logging.info(model)
     model.to(device)
     model = DataParallel(model)
     metric_fc.to(device)
     metric_fc = DataParallel(metric_fc)
+    if args.pretrained:
+        pretrained, iter_cnt = args.pretrained.split(",")
+        model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
+        metric_fc.load_state_dict(torch.load(pretrained + '_weight_' + str(iter_cnt) + '.pth'))
 
     if args.optimizer == 'sgd':
         optimizer = torch.optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}], lr=args.lr, weight_decay=args.weight_decay)
