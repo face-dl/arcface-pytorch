@@ -52,7 +52,7 @@ def get_featurs(model, images_lists, batch_size=10):
             features = feature
         else:
             features = np.vstack((features, feature))
-        # logging.info("index/count %s/%s", index, count)
+            # logging.info("index/count %s/%s", index, count)
     logging.info("features shape %s", feature.shape)
     return features
 
@@ -109,7 +109,7 @@ def lfw_test(model, path, batch_size):
     t = time.time() - s
     logging.info('total time is {}'.format(t))
     acc, th = test_performance(features, issame_list)
-    logging.info('lfw face verification accuracy: ', acc, 'threshold: ', th)
+    logging.info('lfw face verification accuracy: %s th %s ', acc, th)
     return acc
 
 
