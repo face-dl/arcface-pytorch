@@ -9,6 +9,17 @@ import torch.nn.functional as F
 from torch.nn import Parameter
 
 
+class NoiseTolerant(object):
+    def __init__(self):
+        pass
+
+    def cache_datas(self, consines, labels):
+        pass
+
+    def get_mul_weight(self):
+        pass
+
+
 class ArcMarginProduct(nn.Module):
     r"""Implement of large margin arc distance: :
         Args:
@@ -20,7 +31,7 @@ class ArcMarginProduct(nn.Module):
             cos(theta + m)
         """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False):
+    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False, noise_tolerant=False):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -31,6 +42,9 @@ class ArcMarginProduct(nn.Module):
         self.weight = Parameter(_weight / _weight.norm() * 0.2)
 
         self.easy_margin = easy_margin
+        self.noise_tolerant = noise_tolerant
+        if noise_tolerant:
+            self.nt = NoiseTolerant()
         self.cos_m = math.cos(m)
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)
@@ -53,6 +67,9 @@ class ArcMarginProduct(nn.Module):
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
         output *= self.s
         # print(output)
+        if self.noise_tolerant:
+            self.nt.cache_datas(cosine, label)
+            output *= self.nt.get_mul_weight()
 
         return (cosine, output)
 

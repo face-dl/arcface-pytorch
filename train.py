@@ -233,6 +233,7 @@ def parse_args():
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     parser.add_argument('--target', type=str, default=target, help='verification targets')
     parser.add_argument('--only_val', default=False, action='store_true', help='if output ce loss')
+    parser.add_argument('--noise_tolerant', default=False, action='store_true', help='if output ce loss')
 
     parser.add_argument('--lr', type=float, default=0.001, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
@@ -308,7 +309,7 @@ def train_net(args):
     if args.metric == 'add_margin':
         metric_fc = metrics.AddMarginProduct(512, num_classes, s=args.margin_s, m=0.35)
     elif args.metric == 'arc_margin':
-        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin)
+        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin, noise_tolerant=args.noise)
     elif args.metric == 'sphere':
         metric_fc = metrics.SphereProduct(512, num_classes, m=4)
     else:
