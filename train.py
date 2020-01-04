@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils import data as torch_data
 
 from data.dataset import Dataset
-from models import resnet, metrics
+from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
 from test import *
 from utils.visualizer import Visualizer
@@ -93,7 +93,7 @@ def train_net(args):
         criterion = torch.nn.CrossEntropyLoss()
 
     if args.network == 'resnet18':
-        model = resnet.resnet_face18(use_se=args.use_se)
+        model = fmobilefacenet.resnet_face18(args=args)
     elif args.network == 'resnet34':
         model = resnet.resnet34()
     elif args.network == 'resnet50':
