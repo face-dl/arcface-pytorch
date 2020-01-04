@@ -1,10 +1,16 @@
 from __future__ import print_function
 
 import argparse
+import logging
+import os
+import time
 from collections import defaultdict
 
 import git
+import numpy as np
+import torch
 from torch import nn
+from torch.nn import DataParallel
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils import data as torch_data
 from torch.utils.tensorboard import SummaryWriter
@@ -13,8 +19,6 @@ from data.dataset import Dataset
 from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
 from test import lfw_test
-from torch.nn import DataParallel
-
 from utils.visualizer import Visualizer
 
 
