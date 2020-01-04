@@ -391,8 +391,8 @@ def train_net(args):
                 sw.add_scalar("acc", acc, iters)
                 sw.add_scalar("real_acc", real_acc, iters)
 
-        noise.save_epoch(i)
-        save_model(model, metric_fc, file_path, args.network, i)
+        noise.save_epoch(epoch)
+        save_model(model, metric_fc, file_path, args.network, epoch)
         scheduler.step()
 
         if args.target:
