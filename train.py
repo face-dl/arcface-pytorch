@@ -29,7 +29,7 @@ class Noise(object):
         import matplotlib.pyplot as plt
         plt.figure(figsize=(20, 8))
         ###绘图
-        plt.hist(cos_t_cur, bins=1000, color='g')
+        plt.hist(cos_t_cur, bins=200, color='g')
         plt.title('余弦直方图')
         ###保存
         plt.savefig("{}/plt_{}.jpg".format(self.file_path, end_str))
@@ -338,11 +338,11 @@ def train_net(args):
     acc_metric = AccMetric(False)
     real_acc_metric = AccMetric(True)
     noise = Noise(file_path, len(trainloader))
-    for i in range(max_epoch):
+    for epoch in range(max_epoch):
         model.train()
 
         for ii, data in enumerate(trainloader):
-            iters = i * len(trainloader) + ii
+            iters = epoch * len(trainloader) + ii
 
             data_input, label = data
             data_input = data_input.to(device)
@@ -379,7 +379,7 @@ def train_net(args):
                 left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
                 logging.info('time %s train lr %.02f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
-                             time_str, optimizer.param_groups[0]['lr'], i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
+                             time_str, optimizer.param_groups[0]['lr'], epoch, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
                     visualizer.display_current_results(iters, mean_loss, name='train_loss')
