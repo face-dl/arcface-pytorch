@@ -234,7 +234,8 @@ def parse_args():
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
 
-    parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
+    # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
