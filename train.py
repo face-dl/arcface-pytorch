@@ -356,7 +356,8 @@ def train_net(args):
             # add metrics
             label = label.data.cpu().numpy()
             loss_metric.update_loss(loss.item())
-            cosine = cosine.data.cpu()
+            cosine = cosine.data.cpu().numpy()
+            output = output.data.cpu().numpy()
             theta_metric.update(label, cosine)
             acc_metric.update(label, output)
             real_acc_metric.update(label, cosine)
