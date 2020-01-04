@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import argparse
 import logging
+from collections import defaultdict
 
 import git
 from torch import nn
@@ -14,6 +15,87 @@ from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
 from test import *
 from utils.visualizer import Visualizer
+
+
+class Noise(object):
+    def __init__(self, file_path, poche_size):
+        self.consine_list = []
+        self.file_path = file_path
+        self.poche_size = poche_size
+        self.sample_len = 5000
+        self.save_freq = 1000
+
+    def save_png(self, cos_t_cur, end_str):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(20, 8))
+        ###绘图
+        plt.hist(cos_t_cur, bins=1000, color='g')
+        plt.title('余弦直方图')
+        ###保存
+        plt.savefig("{}/plt_{}.jpg".format(self.file_path, end_str))
+
+    def save_mean_png(self, cos_t_cur, end_str):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(20, 8))
+        ###绘图
+        x = np.arange(len(cos_t_cur))
+        plt.plot(x, cos_t_cur, color="red", linewidth=1)
+        plt.title('余弦柱状图')
+        ###保存
+        plt.savefig("{}/plt_mean_{}.jpg".format(self.file_path, end_str))
+
+    def cal_thes(self, n2, end_str):
+        sigm_l_th = int(len(n2) * 0.005)
+        sigm_l = n2[sigm_l_th]
+        sigm_r = n2[-sigm_l_th]
+        logging.info("sigm_l %s sigm_r %s", sigm_l, sigm_r)
+
+        bins = 100
+        bin_dict = defaultdict(int)
+        for n in n2:
+            n = int(n * bins)
+            if n == bins:
+                n == bins - 1
+            bin_dict[n] += 1
+
+        n2 = np.zeros(bins * 2)
+        for index in range(bins * 2):
+            n2[index] = bin_dict[index - bins]
+        n2_copy = n2.copy()
+        for index in range(bins * 2):
+            start = max(0, index - 2)
+            end = min(bins * 2, index + 2)
+            n2[index] = np.mean(n2_copy[start:end])
+
+        self.save_mean_png(n2, end_str)
+        max_thes = []
+        max_counts = []
+        for th in range(bins * 2):
+            if 5 <= th <= bins * 2 - 6:
+                is_max = True
+                for i in range(11):
+                    cur = n2[th - 5 + i]
+                    if cur == 0 or cur > n2[th]:
+                        is_max = False
+                        break
+                if is_max:
+                    max_thes.append((th - bins) * 0.01)
+                    max_counts.append(n2[th])
+        logging.info("max_thes %s max_counts %s", max_thes, max_counts)
+
+    def append_cosine(self, consine, nbatch):
+        self.consine_list.append(consine)
+        if nbatch % self.save_freq == 0:
+            cos_t_cur = np.concatenate(self.consine_list[-self.sample_len:])
+            self.save_png(cos_t_cur, nbatch)
+            cos_t_cur.sort()
+            self.cal_thes(cos_t_cur, nbatch)
+
+    def save_epoch(self, epoch):
+        cos_t_all = np.concatenate(self.consine_list[-self.poche_size:])
+        self.save_png(cos_t_all, "epoch_{}".format(epoch))
+        cos_t_all.sort()
+        self.cal_thes(cos_t_all, "epoch_{}".format(epoch))
 
 
 class EvalMetric(object):
@@ -110,7 +192,6 @@ class ThetaMetric(EvalMetric):
         super(ThetaMetric, self).__init__("theta")
 
     def update(self, labels, cosine):
-        cosine = cosine.data.cpu()
         indexes = torch.LongTensor(labels).unsqueeze(dim=1)
         consine_list = cosine.gather(1, indexes)
         self.num_inst += 1
@@ -123,7 +204,6 @@ class AccMetric(EvalMetric):
         super(AccMetric, self).__init__("real_acc" if is_real else "acc")
 
     def update(self, labels, cosine):
-        cosine = cosine.data.cpu().numpy()
         cosine = np.argmax(cosine, axis=1)
         acc = np.mean((cosine == labels).astype(int))
         self.num_inst += 1
@@ -252,6 +332,7 @@ def train_net(args):
     theta_metric = ThetaMetric()
     acc_metric = AccMetric(False)
     real_acc_metric = AccMetric(True)
+    noise = Noise(file_path, len(trainloader))
     for i in range(max_epoch):
         model.train()
 
@@ -271,9 +352,11 @@ def train_net(args):
             # add metrics
             label = label.data.cpu().numpy()
             loss_metric.update_loss(loss.item())
+            cosine = cosine.data.cpu()
             theta_metric.update(label, cosine)
             acc_metric.update(label, output)
             real_acc_metric.update(label, cosine)
+            noise.append_cosine(cosine, iters)
 
             if iters % args.print_freq == 0:
                 mean_loss = loss_metric.get_value()
@@ -295,6 +378,7 @@ def train_net(args):
                 sw.add_scalar("acc", acc, iters)
                 sw.add_scalar("real_acc", real_acc, iters)
 
+        noise.save_epoch(i)
         save_model(model, metric_fc, file_path, args.network, i)
         scheduler.step()
 
