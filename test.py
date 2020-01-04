@@ -20,7 +20,7 @@ from torch.nn import DataParallel
 
 def load_bin(path, image_size):
     bins, issame_list = pickle.load(open(path, 'rb'), encoding='bytes')
-    data = np.zeros((len(issame_list) * 2, image_size[0], image_size[1]), 3)
+    data = np.zeros((len(issame_list) * 2, image_size[0], image_size[1], 3))
 
     for i in range(len(issame_list) * 2):
         _bin = bins[i]
@@ -36,7 +36,6 @@ def load_bin(path, image_size):
 
 def get_featurs(model, images_lists, batch_size=10):
     features = None
-    cnt = 0
     count = math.ceil(len(images_lists) / batch_size)
     for index in range(count):
         images = images_lists[index * batch_size:(index + 1) * batch_size, ...]
@@ -53,8 +52,9 @@ def get_featurs(model, images_lists, batch_size=10):
             features = feature
         else:
             features = np.vstack((features, feature))
+        # logging.info("index/count %s/%s", index, count)
     logging.info("features shape %s", feature.shape)
-    return features, cnt
+    return features
 
 
 def load_model(model, model_path):
@@ -104,10 +104,10 @@ def test_performance(features, issame_list):
 def lfw_test(model, path, batch_size):
     s = time.time()
     images, issame_list = load_bin(path, [112, 112])
-    features, cnt = get_featurs(model, images, batch_size=batch_size)
+    features = get_featurs(model, images, batch_size=batch_size)
     print(features.shape)
     t = time.time() - s
-    logging.info('total time is {}, average time is {}'.format(t, t / cnt))
+    logging.info('total time is {}'.format(t))
     acc, th = test_performance(features, issame_list)
     logging.info('lfw face verification accuracy: ', acc, 'threshold: ', th)
     return acc
