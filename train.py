@@ -159,8 +159,11 @@ class EvalMetric(object):
         else:
             return (self.name, self.sum_metric / self.num_inst)
 
-    def get_value(self):
-        return self.sum_metric / self.num_inst
+    def get_value(self, reset=True):
+        ret = self.sum_metric / self.num_inst
+        if reset:
+            self.reset()
+        return ret
 
     def get_name_value(self):
         """Returns zipped name and value pairs.
@@ -191,12 +194,8 @@ class ThetaMetric(EvalMetric):
     def __init__(self):
         super(ThetaMetric, self).__init__("theta")
 
-    def update(self, labels, cosine):
+    def update_mean_deg(self, mean_deg):
         self.num_inst += 1
-        consine_list = np.zeros_like(labels)
-        for i, c in enumerate(cosine):
-            consine_list[i] = c[labels[i]]
-        mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
         self.sum_metric += mean_deg
 
 
@@ -360,10 +359,15 @@ def train_net(args):
             loss_metric.update_loss(loss.item())
             cosine = cosine.data.cpu().numpy()
             output = output.data.cpu().numpy()
-            theta_metric.update(label, cosine)
             acc_metric.update(label, output)
             real_acc_metric.update(label, cosine)
-            noise.append_cosine(cosine, iters)
+
+            consine_list = np.zeros_like(label)
+            for i, c in enumerate(cosine):
+                consine_list[i] = c[label[i]]
+            mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
+            theta_metric.update_mean_deg(mean_deg)
+            noise.append_cosine(consine_list, iters)
 
             if iters % args.print_freq == 0:
                 mean_loss = loss_metric.get_value()
