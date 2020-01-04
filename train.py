@@ -148,13 +148,13 @@ def parse_args():
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     parser.add_argument('--target', type=str, default=target, help='verification targets')
 
-    parser.add_argument('--lr', type=float, default=0.1, help='start learning rate')
+    parser.add_argument('--lr', type=float, default=0.01, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
     parser.add_argument('--num_workers', type=int, default=2, help='batch size in each context')
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
 
-    parser.add_argument('--pretrained', default='./train/noise/resnet18,4', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
@@ -163,7 +163,7 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    parser.add_argument('--lr_steps', type=str, default='8, 12, 16', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='1,5', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
@@ -194,7 +194,7 @@ def train_net(args):
 
     if args.display:
         visualizer = Visualizer()
-    sw = SummaryWriter(logdir=file_path)
+    sw = SummaryWriter(file_path)
     device = torch.device("cuda")
 
     train_dataset = Dataset(args.leveldb_path, args.label_path)
@@ -230,8 +230,8 @@ def train_net(args):
     # view_model(model, opt.input_shape)
     if args.pretrained:
         pretrained, iter_cnt = args.pretrained.split(",")
-        model.load_state_dict(torch.load(args.pretrained + '_base_' + str(iter_cnt) + '.pth'))
-        metric_fc.load_state_dict(torch.load(args.pretrained + '_weight_' + str(iter_cnt) + '.pth'))
+        model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
+        metric_fc.load_state_dict(torch.load(pretrained + '_weight_' + str(iter_cnt) + '.pth'))
     # logging.info(model)
     model.to(device)
     model = DataParallel(model)
