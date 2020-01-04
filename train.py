@@ -228,7 +228,7 @@ def parse_args():
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     parser.add_argument('--target', type=str, default=target, help='verification targets')
 
-    parser.add_argument('--lr', type=float, default=0.01, help='start learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
     parser.add_argument('--num_workers', type=int, default=2, help='batch size in each context')
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
@@ -244,7 +244,7 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    parser.add_argument('--lr_steps', type=str, default='1,5', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='4', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
@@ -372,8 +372,8 @@ def train_net(args):
                 cost = (time.time() - start) / 3600
                 left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
-                logging.info('time %s train lr %s epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
-                             time_str, optimizer.param_groups(), i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
+                logging.info('time %s train lr %.02f epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
+                             time_str, optimizer.param_groups[0]['lr'], i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
                     visualizer.display_current_results(iters, mean_loss, name='train_loss')
