@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import argparse
-import logging
 from collections import defaultdict
 
 import git
@@ -227,6 +226,7 @@ def parse_args():
 
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     parser.add_argument('--target', type=str, default=target, help='verification targets')
+    parser.add_argument('--only_val', default=False, action='store_true', help='if output ce loss')
 
     parser.add_argument('--lr', type=float, default=0.001, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
