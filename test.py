@@ -7,6 +7,7 @@ Created on 18-5-30 下午4:55
 from __future__ import print_function
 
 import logging
+import math
 import os
 import pickle
 import time
@@ -33,64 +34,29 @@ def load_bin(path, image_size):
     return (data, issame_list)
 
 
-def get_lfw_list(pair_list):
-    with open(pair_list, 'r') as fd:
-        pairs = fd.readlines()
-    data_list = []
-    for pair in pairs:
-        splits = pair.split()
-
-        if splits[0] not in data_list:
-            data_list.append(splits[0])
-
-        if splits[1] not in data_list:
-            data_list.append(splits[1])
-    return data_list
-
-
-def load_image(img_path):
-    image = cv2.imread(img_path, 0)
-    if image is None:
-        return None
-    image = np.dstack((image, np.fliplr(image)))
-    image = image.transpose((2, 0, 1))
-    image = image[:, np.newaxis, :, :]
-    image = image.astype(np.float32, copy=False)
-    image -= 127.5
-    image /= 127.5
-    return image
-
-
-def get_featurs(model, test_list, batch_size=10):
+def get_featurs(model, images_lists, batch_size=10):
     images = None
     features = None
     cnt = 0
-    for i, image in enumerate(test_list):
-        if images is None:
-            images = image
+    count = math.ceil(len(images_lists) / batch_size)
+    for index in range(count):
+        images = images_lists[index * batch_size:(index + 1) * batch_size, ...]
+
+        data = torch.from_numpy(images)
+        data = data.to(torch.device("cuda"))
+        output = model(data)
+        output = output.data.cpu().numpy()
+
+        fe_1 = output[::2]
+        fe_2 = output[1::2]
+        feature = np.hstack((fe_1, fe_2))
+        logging.info("feature shape %s", feature.shape)
+
+        if features is None:
+            features = feature
         else:
-            images = np.concatenate((images, image), axis=0)
-
-        if images.shape[0] % batch_size == 0 or i == len(test_list) - 1:
-            cnt += 1
-
-            data = torch.from_numpy(images)
-            data = data.to(torch.device("cuda"))
-            output = model(data)
-            output = output.data.cpu().numpy()
-
-            fe_1 = output[::2]
-            fe_2 = output[1::2]
-            feature = np.hstack((fe_1, fe_2))
-            # print(feature.shape)
-
-            if features is None:
-                features = feature
-            else:
-                features = np.vstack((features, feature))
-
-            images = None
-
+            features = np.vstack((features, feature))
+        logging.info("features shape %s", feature.shape)
     return features, cnt
 
 
@@ -100,14 +66,6 @@ def load_model(model, model_path):
     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
     model_dict.update(pretrained_dict)
     model.load_state_dict(model_dict)
-
-
-def get_feature_dict(test_list, features):
-    fe_dict = {}
-    for i, each in enumerate(test_list):
-        # key = each.split('/')[1]
-        fe_dict[each] = features[i]
-    return fe_dict
 
 
 def cosin_metric(x1, x2):
