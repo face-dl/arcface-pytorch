@@ -163,7 +163,7 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    parser.add_argument('--lr_steps', type=str, default='1,5', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='2,5', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
@@ -253,8 +253,6 @@ def train_net(args):
     acc_metric = AccMetric(False)
     real_acc_metric = AccMetric(True)
     for i in range(max_epoch):
-        scheduler.step()
-
         model.train()
 
         for ii, data in enumerate(trainloader):
@@ -283,10 +281,10 @@ def train_net(args):
                 acc = acc_metric.get_value()
                 real_acc = real_acc_metric.get_value()
 
-                cost = time.time() - start
+                cost = (time.time() - start) / 3600
                 left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
-                logging.info('time %s train lr %s epoch %s iter/size %s/%s iters %s cost/left %s/%s loss %s mean_theta %s acc %s real_acc %s',
+                logging.info('time %s train lr %s epoch %s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
                              time_str, scheduler.get_lr(), i, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
@@ -298,6 +296,7 @@ def train_net(args):
                 sw.add_scalar("real_acc", real_acc, iters)
 
         save_model(model, metric_fc, file_path, args.network, i)
+        scheduler.step()
 
         # model.eval()
         # acc = lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
