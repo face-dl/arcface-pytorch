@@ -365,6 +365,7 @@ def train_net(args):
             consine_list = np.zeros_like(label)
             for i, c in enumerate(cosine):
                 consine_list[i] = c[label[i]]
+            logging.info("consine_list ")
             mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
             theta_metric.update_mean_deg(mean_deg)
             noise.append_cosine(consine_list, iters)
@@ -394,10 +395,11 @@ def train_net(args):
         save_model(model, metric_fc, file_path, args.network, i)
         scheduler.step()
 
-        # model.eval()
-        # acc = lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
-        # if args.display:
-        #     visualizer.display_current_results(iters, acc, name='test_acc')
+        if args.target:
+            model.eval()
+            acc = lfw_test(model, args.target, args.batch_size)
+            if args.display:
+                visualizer.display_current_results(iters, acc, name='test_acc')
 
 
 if __name__ == '__main__':

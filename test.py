@@ -6,13 +6,31 @@ Created on 18-5-30 下午4:55
 """
 from __future__ import print_function
 
+import logging
 import os
+import pickle
 import time
 
 import cv2
 import numpy as np
 import torch
 from torch.nn import DataParallel
+
+
+def load_bin(path, image_size):
+    bins, issame_list = pickle.load(open(path, 'rb'), encoding='bytes')
+    data = np.zeros((len(issame_list) * 2, 3, image_size[0], image_size[1]))
+
+    for i in range(len(issame_list) * 2):
+        _bin = bins[i]
+        img = cv2.imdecode(np.fromstring(bytes(_bin), np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if img.shape[1] != image_size[0]:
+            img = cv2.resize(img, image_size)
+        data[i][:] = img
+        if i % 1000 == 0:
+            print('loading bin', i)
+    return (data, issame_list)
 
 
 def get_lfw_list(pair_list):
@@ -47,11 +65,7 @@ def get_featurs(model, test_list, batch_size=10):
     images = None
     features = None
     cnt = 0
-    for i, img_path in enumerate(test_list):
-        image = load_image(img_path)
-        if image is None:
-            print('read {} error'.format(img_path))
-
+    for i, image in enumerate(test_list):
         if images is None:
             images = image
         else:
@@ -116,17 +130,13 @@ def cal_accuracy(y_score, y_true):
     return (best_acc, best_th)
 
 
-def test_performance(fe_dict, pair_list):
-    with open(pair_list, 'r') as fd:
-        pairs = fd.readlines()
-
+def test_performance(features, issame_list):
     sims = []
     labels = []
-    for pair in pairs:
-        splits = pair.split()
-        fe_1 = fe_dict[splits[0]]
-        fe_2 = fe_dict[splits[1]]
-        label = int(splits[2])
+    for index, label in enumerate(issame_list):
+        f = features[index]
+        fe_1 = f[:512]
+        fe_2 = f[512:]
         sim = cosin_metric(fe_1, fe_2)
 
         sims.append(sim)
@@ -136,15 +146,15 @@ def test_performance(fe_dict, pair_list):
     return acc, th
 
 
-def lfw_test(model, img_paths, identity_list, compair_list, batch_size):
+def lfw_test(model, path, batch_size):
     s = time.time()
-    features, cnt = get_featurs(model, img_paths, batch_size=batch_size)
+    images, issame_list = load_bin(path, [112, 112])
+    features, cnt = get_featurs(model, images, batch_size=batch_size)
     print(features.shape)
     t = time.time() - s
-    print('total time is {}, average time is {}'.format(t, t / cnt))
-    fe_dict = get_feature_dict(identity_list, features)
-    acc, th = test_performance(fe_dict, compair_list)
-    print('lfw face verification accuracy: ', acc, 'threshold: ', th)
+    logging.info('total time is {}, average time is {}'.format(t, t / cnt))
+    acc, th = test_performance(features, issame_list)
+    logging.info('lfw face verification accuracy: ', acc, 'threshold: ', th)
     return acc
 
 
