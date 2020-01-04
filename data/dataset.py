@@ -1,84 +1,127 @@
+import leveldb
+import logging
 import os
-from PIL import Image
-import torch
-from torch.utils import data
-import numpy as np
-from torchvision import transforms as T
-import torchvision
+import random
+from collections import defaultdict
+
 import cv2
-import sys
+import numpy as np
+import torch
+import torchvision
+from torch.utils import data as torch_data
+
+logger = logging.getLogger()
 
 
-class Dataset(data.Dataset):
+class Dataset(torch_data.Dataset):
+    pic_db_dict = {}
 
-    def __init__(self, root, data_list_file, phase='train', input_shape=(1, 128, 128)):
-        self.phase = phase
-        self.input_shape = input_shape
+    def __init__(self, leveldb_path, label_path, min_images=0, max_images=11111111111, ignore_labels=set()):
+        super(Dataset, self).__init__()
+        assert leveldb_path
+        logger.info('loading FaceDataset %s %s min_images %s max_images %s', leveldb_path, label_path, min_images, max_images)
+        self.leveldb_path = leveldb_path
+        self.label_path = label_path
 
-        with open(os.path.join(data_list_file), 'r') as fd:
-            imgs = fd.readlines()
-
-        imgs = [os.path.join(root, img[:-1]) for img in imgs]
-        self.imgs = np.random.permutation(imgs)
-
-        # normalize = T.Normalize(mean=[0.5, 0.5, 0.5],
-        #                         std=[0.5, 0.5, 0.5])
-
-        normalize = T.Normalize(mean=[0.5], std=[0.5])
-
-        if self.phase == 'train':
-            self.transforms = T.Compose([
-                T.RandomCrop(self.input_shape[1:]),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                normalize
-            ])
+        self.ignore_pic_ids = set()
+        if leveldb_path in self.pic_db_dict:
+            self.pic_db = self.pic_db_dict[leveldb_path]
         else:
-            self.transforms = T.Compose([
-                T.CenterCrop(self.input_shape[1:]),
-                T.ToTensor(),
-                normalize
-            ])
+            self.pic_db = leveldb.LevelDB(leveldb_path, max_open_files=100)
+            self.pic_db_dict[leveldb_path] = self.pic_db
+        with open(self.label_path, "r") as file:
+            lines = file.readlines()
+            self.base_pic_ids = []
+            self.base_labels = []
+            self.base_label2pic = defaultdict(list)
+            for index, line in enumerate(lines):
+                pic_id, label = line.strip().split(",")
+                label = int(label)
+                if label == -1 or label in ignore_labels:
+                    continue
+                self.base_pic_ids.append(pic_id)
+                self.base_labels.append(label)
+                self.base_label2pic[label].append(pic_id)
+        self.min_images = min_images
+        self.max_images = max_images
+        self.reset()
 
-    def __getitem__(self, index):
-        sample = self.imgs[index]
-        splits = sample.split()
-        img_path = splits[0]
-        data = Image.open(img_path)
-        data = data.convert('L')
-        data = self.transforms(data)
-        label = np.int32(splits[1])
-        return data.float(), label
+    def reset(self):
+        logger.info("origin pic_ids %s labels %s", len(self.base_pic_ids), len(self.base_label2pic))
+        min_images = self.min_images
+        max_images = self.max_images
+        if min_images > 0:
+            new_label2pic = defaultdict(list)
+            for l in self.base_label2pic:
+                c = self.base_label2pic[l]
+                if len(c) >= min_images:
+                    sub = random.sample(c, min(max_images, len(c)))
+                    new_label2pic[l] = sub
+            new_pic_ids = []
+            new_labels = []
+            for label in new_label2pic:
+                if label in new_label2pic:
+                    new_pic_ids += new_label2pic[label]
+                    new_labels += [label] * len(new_label2pic[label])
+            self.pic_ids = new_pic_ids
+            self.labels = new_labels
+            self.label2pic = new_label2pic
+        else:
+            self.pic_ids = self.base_pic_ids
+            self.labels = self.base_labels
+            self.label2pic = self.base_label2pic
+
+        self.order_labels = sorted(self.label2pic.keys())
+        self.train_labels = {}
+        for index, label in enumerate(self.order_labels):
+            self.train_labels[label] = index
+        logger.info("final pic_ids %s labels %s", len(self.pic_ids), len(self.label2pic))
+
+    @property
+    def label_len(self):
+        return len(self.label2pic)
 
     def __len__(self):
-        return len(self.imgs)
+        return len(self.pic_ids)
+
+    def __getitem__(self, idx):
+        if idx < len(self.pic_ids):
+            pic_id = self.pic_ids[idx]
+            label = self.labels[idx]
+            try:
+                pic_id = str(pic_id).encode('utf-8')
+                data = self.pic_db.Get(pic_id)
+                img = cv2.imdecode(np.fromstring(bytes(data), np.uint8), cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                return torch.from_numpy(img), self.train_labels[label]
+            except Exception as e:
+                logger.info("pic_id %s no pic", pic_id)
+        else:
+            print("get_item error")
+            assert False
 
 
 if __name__ == '__main__':
-    dataset = Dataset(root='/data/Datasets/fv/dataset_v1.1/dataset_mix_aligned_v1.1',
-                      data_list_file='/data/Datasets/fv/dataset_v1.1/mix_20w.txt',
-                      phase='test',
-                      input_shape=(1, 128, 128))
+    leveldb_path = os.path.expanduser("/opt/cacher/faces_webface_112x112")
+    label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
+    dataset = Dataset(leveldb_path=leveldb_path, label_path=label_path)
 
-    trainloader = data.DataLoader(dataset, batch_size=10)
+    trainloader = torch_data.DataLoader(dataset, batch_size=10)
     for i, (data, label) in enumerate(trainloader):
-        # imgs, labels = data
-        # print imgs.numpy().shape
-        # print data.cpu().numpy()
-        # if i == 0:
-        img = torchvision.utils.make_grid(data).numpy()
-        # print img.shape
-        # print label.shape
-        # chw -> hwc
+        img = torchvision.utils.make_grid(data.permute(0, 3, 1, 2)).numpy()
+        # # print img.shape
+        # # print label.shape
+        # # chw -> hwc
         img = np.transpose(img, (1, 2, 0))
-        # img *= np.array([0.229, 0.224, 0.225])
-        # img += np.array([0.485, 0.456, 0.406])
-        img += np.array([1, 1, 1])
-        img *= 127.5
-        img = img.astype(np.uint8)
+        # # img *= np.array([0.229, 0.224, 0.225])
+        # # img += np.array([0.485, 0.456, 0.406])
+        # img += np.array([1, 1, 1])
+        # img *= 127.5
+        # img = img.astype(np.uint8)
         img = img[:, :, [2, 1, 0]]
-
+        print(img.shape)
         cv2.imshow('img', img)
         cv2.waitKey()
+        break
         # break
         # dst.decode_segmap(labels.numpy()[0], plot=True)

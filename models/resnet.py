@@ -4,13 +4,8 @@ Created on 18-5-21 下午5:26
 
 @author: ronghuaiyang
 """
-import torch
 import torch.nn as nn
-import math
 import torch.utils.model_zoo as model_zoo
-import torch.nn.utils.weight_norm as weight_norm
-import torch.nn.functional as F
-
 
 # __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
 #            'resnet152']
@@ -145,10 +140,10 @@ class SEBlock(nn.Module):
         super(SEBlock, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
-                nn.Linear(channel, channel // reduction),
-                nn.PReLU(),
-                nn.Linear(channel // reduction, channel),
-                nn.Sigmoid()
+            nn.Linear(channel, channel // reduction),
+            nn.PReLU(),
+            nn.Linear(channel // reduction, channel),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -163,7 +158,7 @@ class ResNetFace(nn.Module):
         self.inplanes = 64
         self.use_se = use_se
         super(ResNetFace, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1, stride=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.prelu = nn.PReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -173,7 +168,7 @@ class ResNetFace(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.bn4 = nn.BatchNorm2d(512)
         self.dropout = nn.Dropout()
-        self.fc5 = nn.Linear(512 * 8 * 8, 512)
+        self.fc5 = nn.Linear(512 * 7 * 7, 512)
         self.bn5 = nn.BatchNorm1d(512)
 
         for m in self.modules():
@@ -203,6 +198,10 @@ class ResNetFace(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        x = x.float() - 127.5
+        x = x * 0.0078125
+        x = x.permute(0, 3, 1, 2)
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.prelu(x)

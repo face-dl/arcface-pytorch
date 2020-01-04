@@ -1,10 +1,12 @@
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
+
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-import math
 
 
 class ArcMarginProduct(nn.Module):
@@ -17,14 +19,16 @@ class ArcMarginProduct(nn.Module):
 
             cos(theta + m)
         """
+
     def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
-        nn.init.xavier_uniform_(self.weight)
+        _weight = torch.FloatTensor(out_features, in_features)
+        nn.init.xavier_uniform_(_weight)
+        self.weight = Parameter(_weight / _weight.norm() * 0.2)
 
         self.easy_margin = easy_margin
         self.cos_m = math.cos(m)
@@ -50,7 +54,7 @@ class ArcMarginProduct(nn.Module):
         output *= self.s
         # print(output)
 
-        return output
+        return (cosine, output)
 
 
 class AddMarginProduct(nn.Module):
@@ -103,6 +107,7 @@ class SphereProduct(nn.Module):
         m: margin
         cos(m*theta)
     """
+
     def __init__(self, in_features, out_features, m=4):
         super(SphereProduct, self).__init__()
         self.in_features = in_features

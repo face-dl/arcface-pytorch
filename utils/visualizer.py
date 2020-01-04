@@ -1,7 +1,5 @@
-import visdom
-import time
 import numpy as np
-from matplotlib import pyplot as plt
+import visdom
 from sklearn.metrics import roc_curve
 
 

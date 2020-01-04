@@ -5,13 +5,13 @@ Created on 18-5-30 下午4:55
 @author: ronghuaiyang
 """
 from __future__ import print_function
+
 import os
-import cv2
-from models import *
-import torch
-import numpy as np
 import time
-from config import Config
+
+import cv2
+import numpy as np
+import torch
 from torch.nn import DataParallel
 
 
@@ -168,7 +168,3 @@ if __name__ == '__main__':
 
     model.eval()
     lfw_test(model, img_paths, identity_list, opt.lfw_test_list, opt.test_batch_size)
-
-
-
-
