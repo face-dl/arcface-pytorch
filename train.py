@@ -192,11 +192,12 @@ class ThetaMetric(EvalMetric):
         super(ThetaMetric, self).__init__("theta")
 
     def update(self, labels, cosine):
-        indexes = torch.LongTensor(labels).unsqueeze(dim=1)
-        consine_list = cosine.gather(1, indexes)
         self.num_inst += 1
-        mean_rad = consine_list.acos().mean().item()
-        self.sum_metric += np.rad2deg(mean_rad)
+        consine_list = np.zeros_like(labels)
+        for i, c in enumerate(cosine):
+            consine_list[i] = c[labels[i]]
+        mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
+        self.sum_metric += mean_deg
 
 
 class AccMetric(EvalMetric):
