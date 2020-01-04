@@ -113,10 +113,13 @@ def lfw_test(model, path, batch_size):
 
 if __name__ == '__main__':
     from models import fmobilefacenet
+    from torch.nn import DataParallel
 
     model = fmobilefacenet.resnet_face18(512)
     pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
     pretrained, iter_cnt = pretrained.split(",")
+
+    model = DataParallel(model)
     model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
     model.to(torch.device("cuda"))
 

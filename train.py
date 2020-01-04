@@ -12,7 +12,9 @@ from torch.utils.tensorboard import SummaryWriter
 from data.dataset import Dataset
 from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
-from test import *
+from test import lfw_test
+from torch.nn import DataParallel
+
 from utils.visualizer import Visualizer
 
 
