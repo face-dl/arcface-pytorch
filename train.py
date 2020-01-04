@@ -284,8 +284,8 @@ def train_net(args):
                 cost = (time.time() - start) / 3600
                 left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
-                logging.info('time %s train lr %s epoch %s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
-                             time_str, scheduler.get_lr(), i, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
+                logging.info('time %s train lr %s epoch/max_epoch %s/%s iter/size %s/%s iters %s cost/left %.02f/%.02f loss %.02f mean_theta %.02f acc %.02f real_acc %.02f',
+                             time_str, scheduler.get_lr(), i, max_epoch, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
                     visualizer.display_current_results(iters, mean_loss, name='train_loss')
