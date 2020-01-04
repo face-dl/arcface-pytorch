@@ -7,12 +7,127 @@ import git
 from torch import nn
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils import data as torch_data
+from torch.utils.tensorboard import SummaryWriter
 
 from data.dataset import Dataset
 from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
 from test import *
 from utils.visualizer import Visualizer
+
+
+class EvalMetric(object):
+    """Base class for all evaluation metrics.
+
+    .. note::
+
+        This is a base class that provides common metric interfaces.
+        One should not use this class directly, but instead create new metric
+        classes that extend it.
+
+    Parameters
+    ----------
+    name : str
+        Name of this metric instance for display.
+    output_names : list of str, or None
+        Name of predictions that should be used when updating with update_dict.
+        By default include all predictions.
+    label_names : list of str, or None
+        Name of labels that should be used when updating with update_dict.
+        By default include all labels.
+    """
+
+    def __init__(self, name):
+        self.name = str(name)
+        self.reset()
+
+    def __str__(self):
+        return "EvalMetric: {}".format(dict(self.get_name_value()))
+
+    def update(self, labels, preds):
+        """Updates the internal evaluation result.
+
+        Parameters
+        ----------
+        labels : list of `NDArray`
+            The labels of the data.
+
+        preds : list of `NDArray`
+            Predicted values.
+        """
+        raise NotImplementedError()
+
+    def reset(self):
+        """Resets the internal evaluation result to initial state."""
+        self.num_inst = 0
+        self.sum_metric = 0.0
+
+    def get(self):
+        """Gets the current evaluation result.
+
+        Returns
+        -------
+        names : list of str
+           Name of the metrics.
+        values : list of float
+           Value of the evaluations.
+        """
+        if self.num_inst == 0:
+            return (self.name, float('nan'))
+        else:
+            return (self.name, self.sum_metric / self.num_inst)
+
+    def get_value(self):
+        return self.sum_metric / self.num_inst
+
+    def get_name_value(self):
+        """Returns zipped name and value pairs.
+
+        Returns
+        -------
+        list of tuples
+            A (name, value) tuple list.
+        """
+        name, value = self.get()
+        if not isinstance(name, list):
+            name = [name]
+        if not isinstance(value, list):
+            value = [value]
+        return list(zip(name, value))
+
+
+class LossMetric(EvalMetric):
+    def __init__(self):
+        super(LossMetric, self).__init__('loss')
+
+    def update_loss(self, loss):
+        self.num_inst += 1
+        self.sum_metric += loss
+
+
+class ThetaMetric(EvalMetric):
+    def __init__(self, is_real):
+        super(ThetaMetric, self).__init__("theta")
+
+    def update(self, labels, cosine):
+        cosine = cosine.data.cpu()
+        indexes = torch.LongTensor(labels).unsqueeze(dim=1)
+        consine_list = cosine.gather(1, indexes)
+        self.num_inst += 1
+        mean_rad = consine_list.acos().mean().item()
+        self.sum_metric += np.rad2deg(mean_rad)
+
+
+class AccMetric(EvalMetric):
+    def __init__(self, is_real):
+        super(AccMetric, self).__init__("real_acc" if is_real else "acc")
+
+    def update(self, labels, cosine):
+        cosine = cosine.data.cpu().numpy()
+        cosine = np.argmax(cosine, axis=1)
+        acc = np.mean((cosine == labels).astype(int))
+        self.num_inst += 1
+        self.sum_metric += acc
 
 
 def save_model(model, metric_fc, save_path, name, iter_cnt):
@@ -39,7 +154,9 @@ def parse_args():
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
 
-    parser.add_argument('--pretrained', default='', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise/resnet18,4', help='pretrained model to load')
+    # parser.add_argument('--pretrained', default='', help='pretrained model to load')
+
     parser.add_argument('--network', default='resnet18', help='specify network')
     parser.add_argument('--optimizer', default='sgd', help='specify network')
     parser.add_argument('--margin_s', type=float, default=64.0, help='scale for feature')
@@ -77,6 +194,7 @@ def train_net(args):
 
     if args.display:
         visualizer = Visualizer()
+    sw = SummaryWriter(logdir=file_path)
     device = torch.device("cuda")
 
     train_dataset = Dataset(args.leveldb_path, args.label_path)
@@ -111,8 +229,9 @@ def train_net(args):
 
     # view_model(model, opt.input_shape)
     if args.pretrained:
-        model.load_state_dict()
-        metric_fc.load_state_dict()
+        pretrained, iter_cnt = args.pretrained.split(",")
+        model.load_state_dict(torch.load(args.pretrained + '_base_' + str(iter_cnt) + '.pth'))
+        metric_fc.load_state_dict(torch.load(args.pretrained + '_weight_' + str(iter_cnt) + '.pth'))
     # logging.info(model)
     model.to(device)
     model = DataParallel(model)
@@ -129,11 +248,18 @@ def train_net(args):
 
     max_epoch = 2 * lr_steps[-1] - lr_steps[-2]
     start = time.time()
+    loss_metric = LossMetric()
+    theta_metric = ThetaMetric()
+    acc_metric = AccMetric(False)
+    real_acc_metric = AccMetric(True)
     for i in range(max_epoch):
         scheduler.step()
 
         model.train()
+
         for ii, data in enumerate(trainloader):
+            iters = i * len(trainloader) + ii
+
             data_input, label = data
             data_input = data_input.to(device)
             label = label.to(device).long()
@@ -144,30 +270,32 @@ def train_net(args):
             loss.backward()
             optimizer.step()
 
-            iters = i * len(trainloader) + ii
+            # add metrics
+            label = label.data.cpu().numpy()
+            loss_metric.update_loss(loss.item())
+            theta_metric.update(label, cosine)
+            acc_metric.update(label, output)
+            real_acc_metric.update(label, cosine)
 
             if iters % args.print_freq == 0:
-                label = label.data.cpu().numpy()
+                mean_loss = loss_metric.get_value()
+                mean_theta = theta_metric.get_value()
+                acc = acc_metric.get_value()
+                real_acc = real_acc_metric.get_value()
 
-                cosine = cosine.data.cpu().numpy()
-                cosine = np.argmax(cosine, axis=1)
-                real_acc = np.mean((cosine == label).astype(int))
-
-
-                output = output.data.cpu().numpy()
-                output = np.argmax(output, axis=1)
-                acc = np.mean((output == label).astype(int))
-
-                speed = args.print_freq / (time.time() - start)
+                cost = time.time() - start
+                left = cost / (iters + 1) * (len(trainloader) * max_epoch - (iters + 1))
                 time_str = time.asctime(time.localtime(time.time()))
-                logging.info('time %s train lr %s epoch %s iter/size %s/%s iters %s %s iters/s loss %s acc %s real_acc %s',
-                             time_str, scheduler.get_lr(), i, ii, len(trainloader), iters, speed, loss.item(), acc, real_acc)
+                logging.info('time %s train lr %s epoch %s iter/size %s/%s iters %s cost/left %s/%s loss %s mean_theta %s acc %s real_acc %s',
+                             time_str, scheduler.get_lr(), i, ii, len(trainloader), iters, cost, left, mean_loss, mean_theta, acc, real_acc)
 
                 if args.display:
-                    visualizer.display_current_results(iters, loss.item(), name='train_loss')
+                    visualizer.display_current_results(iters, mean_loss, name='train_loss')
                     visualizer.display_current_results(iters, acc, name='train_acc')
-
-                start = time.time()
+                sw.add_scalar("loss", mean_loss, iters)
+                sw.add_scalar("theta", mean_theta, iters)
+                sw.add_scalar("acc", acc, iters)
+                sw.add_scalar("real_acc", real_acc, iters)
 
         save_model(model, metric_fc, file_path, args.network, i)
 
