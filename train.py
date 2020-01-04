@@ -362,7 +362,7 @@ def train_net(args):
             acc_metric.update(label, output)
             real_acc_metric.update(label, cosine)
 
-            consine_list = np.zeros_like(label)
+            consine_list = np.zeros_like(label, dtype=np.float32)
             for i, c in enumerate(cosine):
                 consine_list[i] = c[label[i]]
             mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
