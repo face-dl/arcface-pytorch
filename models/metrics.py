@@ -172,7 +172,7 @@ class NoiseTolerant(object):
                             filter_pdf[i] > filter_pdf[i - 3] + 1 and filter_pdf[i] > filter_pdf[i + 3] + 1 and \
                             filter_pdf[i] > filter_pdf[i - 4] + 2 and filter_pdf[i] > filter_pdf[i + 4] + 2 and \
                             filter_pdf[i] > filter_pdf[i - 5] + 3 and filter_pdf[i] > filter_pdf[i + 5] + 3:
-                t_bin_ids_.push_back(i)
+                t_bin_ids_.append(i)
                 i += 5
         if len(t_bin_ids_) == 0:
             t_bin_ids_.append(t_bin_id_)
@@ -197,7 +197,7 @@ class NoiseTolerant(object):
         for i in range(batch_size):
             weights[i] = self.cos2weight(consines[i])
         if self.iters % 100 == 0:
-            logging.info("tolerant iters %s weight %s", self.iters, weights)
+            logging.info("tolerant iters %s params %s weight %s", self.iters, (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_), weights)
         return weights
 
 
@@ -363,10 +363,10 @@ class SphereProduct(nn.Module):
 if __name__ == '__main__':
     t = NoiseTolerant()
 
-    t.l_bin_id_ = 60
-    t.lt_bin_id_ = 80
+    t.l_bin_id_ = 80
+    t.lt_bin_id_ = 110
 
-    t.rt_bin_id_ = 110
-    t.r_bin_id_ = 120
-    # print(t.weight2(200))
+    t.rt_bin_id_ = 160
+    t.r_bin_id_ = 180
+    print(t.cos2weight(-1))
     t.drow_pic(t.cos2weight, "3.jpg", True)
