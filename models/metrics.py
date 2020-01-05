@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import logging
 import math
 
 import numpy as np
@@ -32,6 +33,7 @@ class NoiseTolerant(object):
         self.fr = 2
 
         self.noise_ratio_ = 0
+        self.iters = 0
 
     def clamp(self, val, min_val, max_val):
         val = max(val, min_val)
@@ -109,9 +111,10 @@ class NoiseTolerant(object):
         plt.savefig(file_path)
 
     def get_mul_weight(self, consines, labels):
+        self.iters += 1
         batch_size = len(consines)
         consines = consines.gather(1, labels.unsqueeze(dim=1).long())
-        consines = consines.data.cpu().numpy()
+        consines = consines.squeeze().data.cpu().numpy()
         self.consines.append(consines)
 
         # add
@@ -192,6 +195,8 @@ class NoiseTolerant(object):
         weights = torch.zeros(batch_size)
         for i in range(batch_size):
             weights[i] = self.cos2weight(consines[i])
+        if self.iters % self.slide_batch_num_ == 0:
+            logging.info("tolerant iters %s weight %s", self.iters, weights)
         return weights
 
 
@@ -243,7 +248,7 @@ class ArcMarginProduct(nn.Module):
         output *= self.s
         # print(output)
         if self.noise_tolerant:
-            w = self.nt.get_mul_weight(cosine, label)
+            w = self.nt.get_mul_weight(cosine, label).
             output *= w
 
         return (cosine, output)
