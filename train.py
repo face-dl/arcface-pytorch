@@ -309,7 +309,7 @@ def train_net(args):
     if args.metric == 'add_margin':
         metric_fc = metrics.AddMarginProduct(512, num_classes, s=args.margin_s, m=0.35)
     elif args.metric == 'arc_margin':
-        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin, noise_tolerant=args.noise)
+        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin, noise_tolerant=args.noise_tolerant)
     elif args.metric == 'sphere':
         metric_fc = metrics.SphereProduct(512, num_classes, m=4)
     else:
