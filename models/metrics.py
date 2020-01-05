@@ -41,7 +41,7 @@ class NoiseTolerant(object):
     def get_bin_id(self, cos):
         bin_id = self.bins_ * (cos - self.value_low_) / (self.value_high_ - self.value_low_)
         bin_id = self.clamp(bin_id, 0, self.bins_)
-        return bin_id
+        return int(bin_id)
 
     def get_cos(self, bin_id):
         cos = self.value_low_ + (self.value_high_ - self.value_low_) * bin_id / self.bins_
@@ -111,7 +111,7 @@ class NoiseTolerant(object):
     def get_mul_weight(self, consines, labels):
         batch_size = len(consines)
         consines = consines.gather(1, labels.unsqueeze(dim=1).long())
-        consines = consines.data.cpu().numpy()
+        consines = consines.squeeze().data.cpu().numpy()
         self.consines.append(consines)
 
         # add
@@ -244,7 +244,8 @@ class ArcMarginProduct(nn.Module):
         # print(output)
         if self.noise_tolerant:
             w = self.nt.get_mul_weight(cosine, label)
-            output *= w
+            # print(w)
+            output *= w.unsqueeze(dim=1).cuda()
 
         return (cosine, output)
 
