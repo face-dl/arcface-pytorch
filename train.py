@@ -235,7 +235,7 @@ def parse_args():
     parser.add_argument('--only_val', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--noise_tolerant', default=False, action='store_true', help='if output ce loss')
 
-    parser.add_argument('--lr', type=float, default=0.001, help='start learning rate')
+    parser.add_argument('--lr', type=float, default=0.1, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
     parser.add_argument('--num_workers', type=int, default=2, help='batch size in each context')
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
@@ -251,7 +251,7 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    parser.add_argument('--lr_steps', type=str, default='4', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='8,12,16', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')

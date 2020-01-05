@@ -197,8 +197,8 @@ class NoiseTolerant(object):
         for i in range(batch_size):
             weights[i] = self.cos2weight(consines[i])
         if self.iters % 100 == 0:
-            logging.info("tolerant iters %s params %s weight %s", self.iters,
-                         (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_, self.noise_ratio_), weights)
+            logging.info("tolerant iters %s params %s", self.iters,
+                         (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_, self.noise_ratio_))
         return weights
 
 
