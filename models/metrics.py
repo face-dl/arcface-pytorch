@@ -122,12 +122,12 @@ class NoiseTolerant(object):
             bin_id = self.get_bin_id(consine)
             self.pdf_[bin_id] += 1
 
-        if len(self.pdf_) < self.slide_batch_num_:
+        if len(self.consines) < self.slide_batch_num_:
             return torch.ones(batch_size)
 
         # del
-        while len(self.pdf_) > self.slide_batch_num_:
-            del_consines = self.pdf_.pop(0)
+        while len(self.consines) > self.slide_batch_num_:
+            del_consines = self.consines.pop(0)
             for consine in del_consines:
                 bin_id = self.get_bin_id(consine)
                 self.pdf_[bin_id] -= 1
@@ -159,6 +159,7 @@ class NoiseTolerant(object):
                 break
             self.r_bin_id_ = i
         if self.l_bin_id_ >= self.r_bin_id_:
+            logging.info("l_bin_id_ %s >= r_bin_id_ %s", self.l_bin_id_, self.r_bin_id_)
             return torch.ones(batch_size)
 
         m_bin_id_ = (self.l_bin_id_ + self.r_bin_id_) / 2
