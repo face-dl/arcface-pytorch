@@ -155,7 +155,7 @@ class NoiseTolerant(object):
                 break
             self.l_bin_id_ = i
         for i in range(self.bins_, -1, -1):
-            if pcf_[i] > 1.0 - self.s * 0.5:
+            if pcf_[i] < 1.0 - self.s * 0.5:
                 break
             self.r_bin_id_ = i
         if self.l_bin_id_ >= self.r_bin_id_:
