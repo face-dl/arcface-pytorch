@@ -43,7 +43,7 @@ class NoiseTolerant(object):
     def get_bin_id(self, cos):
         bin_id = self.bins_ * (cos - self.value_low_) / (self.value_high_ - self.value_low_)
         bin_id = self.clamp(bin_id, 0, self.bins_)
-        return bin_id
+        return int(bin_id)
 
     def get_cos(self, bin_id):
         cos = self.value_low_ + (self.value_high_ - self.value_low_) * bin_id / self.bins_
@@ -195,7 +195,7 @@ class NoiseTolerant(object):
         weights = torch.zeros(batch_size)
         for i in range(batch_size):
             weights[i] = self.cos2weight(consines[i])
-        if self.iters % self.slide_batch_num_ == 0:
+        if self.iters % 100 == 0:
             logging.info("tolerant iters %s weight %s", self.iters, weights)
         return weights
 
@@ -248,9 +248,8 @@ class ArcMarginProduct(nn.Module):
         output *= self.s
         # print(output)
         if self.noise_tolerant:
-            w = self.nt.get_mul_weight(cosine, label).
-            output *= w
-
+            w = self.nt.get_mul_weight(cosine, label)
+            output *= w.unsqueeze(dim=1).cuda()
         return (cosine, output)
 
 
