@@ -34,13 +34,13 @@ class NoiseTolerant(object):
         self.noise_ratio_ = 0
 
     def clamp(self, val, min_val, max_val):
-        val = torch.max(torch.as_tensor(val, dtype=torch.float32), torch.as_tensor(min_val, dtype=torch.float32))
-        val = torch.min(val, torch.as_tensor(max_val, dtype=torch.float32))
+        val = max(val, min_val)
+        val = min(val, max_val)
         return val
 
     def get_bin_id(self, cos):
         bin_id = self.bins_ * (cos - self.value_low_) / (self.value_high_ - self.value_low_)
-        bin_id = self.clamp(bin_id, torch.Tensor([0]), torch.Tensor([self.bins_]))
+        bin_id = self.clamp(bin_id, 0, self.bins_)
         return bin_id
 
     def get_cos(self, bin_id):
@@ -49,8 +49,7 @@ class NoiseTolerant(object):
         return cos
 
     def softplus(self, x):
-        return torch.log(1.0 + torch.exp(torch.as_tensor(x)))
-        # return torch.exp(torch.as_tensor(x))
+        return np.log(1.0 + np.exp(x))
 
     def weight2(self, bin_id):
         z = (bin_id - self.lt_bin_id_) / (self.r_bin_id_ - self.lt_bin_id_)
@@ -61,13 +60,13 @@ class NoiseTolerant(object):
 
     def weight3(self, bin_id):
         a = ((self.r_bin_id_ - self.rt_bin_id_) / self.r) if bin_id > self.rt_bin_id_ else  ((self.rt_bin_id_ - self.l_bin_id_) / self.r)
-        weight3 = torch.exp(-1.0 * (bin_id - self.rt_bin_id_) * (bin_id - self.rt_bin_id_) / (2 * a * a))
+        weight3 = np.exp(-1.0 * (bin_id - self.rt_bin_id_) * (bin_id - self.rt_bin_id_) / (2 * a * a))
         return weight3
 
     def alpha(self, r_cos=None):
         if r_cos is None:
             r_cos = self.clamp(self.get_cos(self.r_bin_id_), 0.0, 1.0)
-        alpha = 2.0 - 1.0 / (1.0 + torch.exp(5 - 20 * r_cos)) - 1.0 / (1.0 + torch.exp(20 * r_cos - 15))
+        alpha = 2.0 - 1.0 / (1.0 + np.exp(5 - 20 * r_cos)) - 1.0 / (1.0 + np.exp(20 * r_cos - 15))
         return alpha
 
     def cos2weight(self, cos):
@@ -100,8 +99,7 @@ class NoiseTolerant(object):
             x = np.arange(200) / 100 - 1.0
         y = np.zeros_like(x)
         for i in range(200):
-            x_torch = torch.Tensor([x[i]])
-            y[i] = func(x_torch).data.numpy()
+            y[i] = func(x[i])
         import matplotlib.pyplot as plt
         plt.figure(figsize=(20, 8))
         ###绘图
@@ -113,7 +111,7 @@ class NoiseTolerant(object):
     def get_mul_weight(self, consines, labels):
         batch_size = len(consines)
         consines = consines.gather(1, labels.unsqueeze(dim=1).long())
-        consines = consines.data.cpu()
+        consines = consines.data.cpu().numpy()
         self.consines.append(consines)
 
         # add
@@ -161,7 +159,7 @@ class NoiseTolerant(object):
             return torch.ones(batch_size)
 
         m_bin_id_ = (self.l_bin_id_ + self.r_bin_id_) / 2
-        t_bin_id_ = torch.topk(filter_pdf, 1)[1]
+        t_bin_id_ = np.argmax(filter_pdf)
 
         t_bin_ids_ = []
         for i in range(max(self.l_bin_id_, 5), min(self.r_bin_id_, self.bins_ - 5)):
