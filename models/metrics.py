@@ -16,10 +16,10 @@ class NoiseTolerant(object):
         self.consines = []
         self.slide_batch_num_ = 1000
 
-        self.l_bin_id_ = 0
-        self.r_bin_id_ = 0
-        self.lt_bin_id_ = 0
-        self.rt_bin_id_ = 0
+        self.l_bin_id_ = -1
+        self.r_bin_id_ = -1
+        self.lt_bin_id_ = -1
+        self.rt_bin_id_ = -1
         self.t_bin_ids_ = []
 
         self.bins_ = 200
