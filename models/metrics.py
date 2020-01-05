@@ -177,11 +177,11 @@ class NoiseTolerant(object):
         if len(t_bin_ids_) == 0:
             t_bin_ids_.append(t_bin_id_)
         if t_bin_id_ < m_bin_id_:
-            self.lt_bin_id = t_bin_id_
-            self.rt_bin_id = max(t_bin_ids_[-1], m_bin_id_)
+            self.lt_bin_id_ = t_bin_id_
+            self.rt_bin_id_ = max(t_bin_ids_[-1], m_bin_id_)
         else:
-            self.rt_bin_id = t_bin_id_
-            self.lt_bin_id = min(t_bin_ids_[0], m_bin_id_)
+            self.rt_bin_id_ = t_bin_id_
+            self.lt_bin_id_ = min(t_bin_ids_[0], m_bin_id_)
 
         self.l_bin_id_ = origin_l_bin_id + self.delta(self.l_bin_id_, origin_l_bin_id)
         self.r_bin_id_ = origin_r_bin_id + self.delta(self.r_bin_id_, origin_r_bin_id)
@@ -197,7 +197,8 @@ class NoiseTolerant(object):
         for i in range(batch_size):
             weights[i] = self.cos2weight(consines[i])
         if self.iters % 100 == 0:
-            logging.info("tolerant iters %s params %s weight %s", self.iters, (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_), weights)
+            logging.info("tolerant iters %s params %s weight %s", self.iters,
+                         (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_, self.noise_ratio_), weights)
         return weights
 
 
@@ -246,11 +247,10 @@ class ArcMarginProduct(nn.Module):
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
-        output *= self.s
-        # print(output)
         if self.noise_tolerant:
             w = self.nt.get_mul_weight(cosine, label)
             output *= w.unsqueeze(dim=1).cuda()
+        output *= self.s
         return (cosine, output)
 
 
@@ -363,10 +363,10 @@ class SphereProduct(nn.Module):
 if __name__ == '__main__':
     t = NoiseTolerant()
 
-    t.l_bin_id_ = 80
-    t.lt_bin_id_ = 110
+    t.l_bin_id_ = 100
+    t.lt_bin_id_ = 113
 
-    t.rt_bin_id_ = 160
-    t.r_bin_id_ = 180
+    t.rt_bin_id_ = 178
+    t.r_bin_id_ = 187
     print(t.cos2weight(-1))
     t.drow_pic(t.cos2weight, "3.jpg", True)
