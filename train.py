@@ -245,6 +245,7 @@ def parse_args():
 
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-06-18:59:18/resnet18,0', help='pretrained model to load')
     parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
@@ -287,7 +288,7 @@ def train_net(args):
     sw = SummaryWriter(file_path)
     device = torch.device("cuda")
 
-    train_dataset = Dataset(args.leveldb_path, args.label_path)
+    train_dataset = Dataset(args.leveldb_path, args.label_path, min_images=1, max_images=300)
     trainloader = torch_data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
                                         shuffle=True,

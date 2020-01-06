@@ -15,7 +15,7 @@ class NoiseTolerant(object):
     def __init__(self, file_path):
         self.file_path = file_path
         self.consines = []
-        self.slide_batch_num_ = 1000
+        self.slide_batch_num_ = 10000
 
         self.bins_ = 200
         self.value_low_ = -1
@@ -384,12 +384,8 @@ class SphereProduct(nn.Module):
 
 
 if __name__ == '__main__':
-    t = NoiseTolerant()
+    t = NoiseTolerant(".")
 
-    t.l_bin_id_ = 100
-    t.lt_bin_id_ = 113
-
-    t.rt_bin_id_ = 178
-    t.r_bin_id_ = 187
-    print(t.cos2weight(-1))
+    t.l_bin_id_,t.lt_bin_id_,t.rt_bin_id_,t.r_bin_id_ = 86, 99, 101, 116
+    t.l_bin_id_,t.lt_bin_id_,t.rt_bin_id_,t.r_bin_id_ = 47, 102, 107, 168
     t.drow_pic(t.cos2weight, "3.jpg", True)
