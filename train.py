@@ -246,7 +246,7 @@ def parse_args():
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
     parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-06-18:59:18/resnet18,0', help='pretrained model to load')
-    parser.add_argument('--pretrained', default='', help='pretrained model to load')
+    # parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
     parser.add_argument('--optimizer', default='sgd', help='specify network')
