@@ -225,11 +225,11 @@ def save_model(model, metric_fc, save_path, name, iter_cnt):
 def parse_args():
     parser = argparse.ArgumentParser(description='Train face network')
 
-    leveldb_path = os.path.expanduser("/opt/cacher/faces_webface_112x112")
-    # leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
+    # leveldb_path = os.path.expanduser("/opt/cacher/faces_webface_112x112")
+    leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
     parser.add_argument('--leveldb_path', default=leveldb_path, help='training set directory')
-    label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
-    # label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
+    # label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
+    label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
@@ -244,8 +244,8 @@ def parse_args():
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
 
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
-    parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
-    # parser.add_argument('--pretrained', default='', help='pretrained model to load')
+    # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
     parser.add_argument('--optimizer', default='sgd', help='specify network')
