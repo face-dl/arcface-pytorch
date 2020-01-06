@@ -189,7 +189,7 @@ class MaysaRoc(object):
 
         logging.info("pos %s neg %s", sum(roc_label), len(roc_label) - sum(roc_label))
         x_labels = []
-        for i in range(-5, -1):
+        for i in range(-5, 1):
             x_labels.append(10 ** i)
         tpr_fpr_table = PrettyTable(['Methods'] + x_labels)
         fig = plt.figure()
