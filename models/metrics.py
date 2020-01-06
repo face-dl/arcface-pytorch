@@ -12,15 +12,10 @@ from torch.nn import Parameter
 
 
 class NoiseTolerant(object):
-    def __init__(self):
+    def __init__(self, file_path):
+        self.file_path = file_path
         self.consines = []
         self.slide_batch_num_ = 1000
-
-        self.l_bin_id_ = -1
-        self.r_bin_id_ = -1
-        self.lt_bin_id_ = -1
-        self.rt_bin_id_ = -1
-        self.t_bin_ids_ = []
 
         self.bins_ = 200
         self.value_low_ = -1
@@ -28,9 +23,14 @@ class NoiseTolerant(object):
 
         self.s = 1.0 - 0.99
         self.r = 2.576
-
-        self.pdf_ = [0] * (self.bins_ + 1)
         self.fr = 2
+
+        self.l_bin_id_ = -1
+        self.r_bin_id_ = -1
+        self.lt_bin_id_ = -1
+        self.rt_bin_id_ = -1
+        self.t_bin_ids_ = []
+        self.pdf_ = [0] * (self.bins_ + 1)
 
         self.noise_ratio_ = 0
         self.iters = 0
@@ -61,7 +61,7 @@ class NoiseTolerant(object):
         return weight2
 
     def weight3(self, bin_id):
-        a = ((self.r_bin_id_ - self.rt_bin_id_) / self.r) if bin_id > self.rt_bin_id_ else  ((self.rt_bin_id_ - self.l_bin_id_) / self.r)
+        a = ((self.r_bin_id_ - self.rt_bin_id_) / self.r) if bin_id > self.rt_bin_id_ else ((self.rt_bin_id_ - self.l_bin_id_) / self.r)
         weight3 = np.exp(-1.0 * (bin_id - self.rt_bin_id_) * (bin_id - self.rt_bin_id_) / (2 * a * a))
         return weight3
 
@@ -109,6 +109,25 @@ class NoiseTolerant(object):
         plt.title('余弦柱状图')
         ###保存
         plt.savefig(file_path)
+
+    def save_png(self, cos_t_cur, end_str):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(20, 8))
+        ###绘图
+        plt.hist(cos_t_cur, bins=200, color='g')
+        plt.title('hist')
+        ###保存
+        plt.savefig("{}/plt_{}.jpg".format(self.file_path, end_str))
+
+    def save_mean_png(self, cos_t_cur, end_str):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(20, 8))
+        ###绘图
+        x = np.arange(len(cos_t_cur))
+        plt.plot(x, cos_t_cur, color="red", linewidth=1)
+        plt.title('mean hist')
+        ###保存
+        plt.savefig("{}/plt_mean_{}.jpg".format(self.file_path, end_str))
 
     def get_mul_weight(self, consines, labels):
         self.iters += 1
@@ -168,10 +187,10 @@ class NoiseTolerant(object):
         t_bin_ids_ = []
         for i in range(max(self.l_bin_id_, 5), min(self.r_bin_id_, self.bins_ - 5)):
             if filter_pdf[i] >= filter_pdf[i - 1] and filter_pdf[i] >= filter_pdf[i + 1] and \
-                            filter_pdf[i] > filter_pdf[i - 2] and filter_pdf[i] > filter_pdf[i + 2] and \
-                            filter_pdf[i] > filter_pdf[i - 3] + 1 and filter_pdf[i] > filter_pdf[i + 3] + 1 and \
-                            filter_pdf[i] > filter_pdf[i - 4] + 2 and filter_pdf[i] > filter_pdf[i + 4] + 2 and \
-                            filter_pdf[i] > filter_pdf[i - 5] + 3 and filter_pdf[i] > filter_pdf[i + 5] + 3:
+                    filter_pdf[i] > filter_pdf[i - 2] and filter_pdf[i] > filter_pdf[i + 2] and \
+                    filter_pdf[i] > filter_pdf[i - 3] + 1 and filter_pdf[i] > filter_pdf[i + 3] + 1 and \
+                    filter_pdf[i] > filter_pdf[i - 4] + 2 and filter_pdf[i] > filter_pdf[i + 4] + 2 and \
+                    filter_pdf[i] > filter_pdf[i - 5] + 3 and filter_pdf[i] > filter_pdf[i + 5] + 3:
                 t_bin_ids_.append(i)
                 i += 5
         if len(t_bin_ids_) == 0:
@@ -199,6 +218,10 @@ class NoiseTolerant(object):
         if self.iters % 100 == 0:
             logging.info("tolerant iters %s params %s", self.iters,
                          (self.l_bin_id_, self.lt_bin_id_, self.rt_bin_id_, self.r_bin_id_, self.noise_ratio_))
+        if self.iters % self.slide_batch_num_ == 0:
+            cos_t_cur = np.concatenate(self.consines[-self.slide_batch_num_:])
+            self.save_png(cos_t_cur, self.iters)
+            self.save_mean_png(filter_pdf, self.iters)
         return weights
 
 
@@ -213,7 +236,7 @@ class ArcMarginProduct(nn.Module):
             cos(theta + m)
         """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False, noise_tolerant=False):
+    def __init__(self, in_features, out_features, s=30.0, m=0.50, easy_margin=False, noise_tolerant=False, file_path=None):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -226,7 +249,7 @@ class ArcMarginProduct(nn.Module):
         self.easy_margin = easy_margin
         self.noise_tolerant = noise_tolerant
         if noise_tolerant:
-            self.nt = NoiseTolerant()
+            self.nt = NoiseTolerant(file_path)
         self.cos_m = math.cos(m)
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)

@@ -226,8 +226,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train face network')
 
     leveldb_path = os.path.expanduser("/opt/cacher/faces_webface_112x112")
+    # leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
     parser.add_argument('--leveldb_path', default=leveldb_path, help='training set directory')
     label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
+    # label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
@@ -309,7 +311,7 @@ def train_net(args):
     if args.metric == 'add_margin':
         metric_fc = metrics.AddMarginProduct(512, num_classes, s=args.margin_s, m=0.35)
     elif args.metric == 'arc_margin':
-        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin, noise_tolerant=args.noise_tolerant)
+        metric_fc = metrics.ArcMarginProduct(512, num_classes, s=args.margin_s, m=args.margin_m, easy_margin=args.easy_margin, noise_tolerant=args.noise_tolerant, file_path=file_path)
     elif args.metric == 'sphere':
         metric_fc = metrics.SphereProduct(512, num_classes, m=4)
     else:
@@ -344,7 +346,7 @@ def train_net(args):
     theta_metric = ThetaMetric()
     acc_metric = AccMetric(False)
     real_acc_metric = AccMetric(True)
-    noise = Noise(file_path, len(trainloader))
+    # noise = Noise(file_path, len(trainloader))
     for epoch in range(max_epoch):
         if not args.only_val:
             model.train()
@@ -374,7 +376,7 @@ def train_net(args):
                     consine_list[i] = c[label[i]]
                 mean_deg = np.rad2deg(np.arccos(consine_list)).mean()
                 theta_metric.update_mean_deg(mean_deg)
-                noise.append_cosine(consine_list, iters)
+                # noise.append_cosine(consine_list, iters)
 
                 if iters % args.print_freq == 0:
                     mean_loss = loss_metric.get_value()
@@ -397,7 +399,7 @@ def train_net(args):
                     sw.add_scalar("acc", acc, iters)
                     sw.add_scalar("real_acc", real_acc, iters)
 
-            noise.save_epoch(epoch)
+            # noise.save_epoch(epoch)
             save_model(model, metric_fc, file_path, args.network, epoch)
             scheduler.step()
 
