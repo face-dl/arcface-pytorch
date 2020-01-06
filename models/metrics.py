@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
+import matplotlib.pyplot as plt
 
 
 class NoiseTolerant(object):
@@ -102,7 +103,6 @@ class NoiseTolerant(object):
         y = np.zeros_like(x)
         for i in range(200):
             y[i] = func(x[i])
-        import matplotlib.pyplot as plt
         plt.figure(figsize=(20, 8))
         ###绘图
         plt.plot(x, y, color="red", linewidth=1)
@@ -111,7 +111,6 @@ class NoiseTolerant(object):
         plt.savefig(file_path)
 
     def save_png(self, cos_t_cur, end_str):
-        import matplotlib.pyplot as plt
         plt.figure(figsize=(20, 8))
         ###绘图
         plt.hist(cos_t_cur, bins=200, color='g')
@@ -120,7 +119,6 @@ class NoiseTolerant(object):
         plt.savefig("{}/plt_{}.jpg".format(self.file_path, end_str))
 
     def save_mean_png(self, cos_t_cur, end_str):
-        import matplotlib.pyplot as plt
         plt.figure(figsize=(20, 8))
         ###绘图
         x = np.arange(len(cos_t_cur))

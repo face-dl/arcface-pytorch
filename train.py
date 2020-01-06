@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 from data.dataset import Dataset
 from models import resnet, metrics, fmobilefacenet
 from models.focal_loss import FocalLoss
-from test import lfw_test
+from test import lfw_test, MaysaRoc
 from utils.visualizer import Visualizer
 
 
@@ -232,8 +232,11 @@ def parse_args():
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
+    test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
+    parser.add_argument('--test_labels', default=test_labels, help='training set directory')
+
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
-    parser.add_argument('--target', type=str, default=target, help='verification targets')
+    parser.add_argument('--target', type=str, default="", help='verification targets')
     parser.add_argument('--only_val', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--noise_tolerant', default=False, action='store_true', help='if output ce loss')
 
@@ -288,6 +291,8 @@ def train_net(args):
     sw = SummaryWriter(file_path)
     device = torch.device("cuda")
 
+    if args.test_labels:
+        maysa_roc = MaysaRoc(leveldb_path=args.leveldb_path, label_path=args.test_labels, file_path=file_path, batch_size=args.batch_size)
     train_dataset = Dataset(args.leveldb_path, args.label_path, min_images=1, max_images=300)
     trainloader = torch_data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
@@ -409,6 +414,8 @@ def train_net(args):
             acc = lfw_test(model, args.target, args.batch_size)
             if args.display:
                 visualizer.display_current_results(iters, acc, name='test_acc')
+        if args.test_labels:
+            maysa_roc.roc(model, epoch)
 
 
 if __name__ == '__main__':
