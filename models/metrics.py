@@ -181,8 +181,8 @@ class NoiseTolerant(object):
             logging.info("l_bin_id_ %s >= r_bin_id_ %s", self.l_bin_id_, self.r_bin_id_)
             return torch.ones(batch_size)
 
-        m_bin_id_ = (self.l_bin_id_ + self.r_bin_id_) / 2
-        t_bin_id_ = np.argmax(filter_pdf)
+        m_bin_id_ = int((self.l_bin_id_ + self.r_bin_id_) / 2)
+        t_bin_id_ = int(np.argmax(filter_pdf))
 
         t_bin_ids_ = []
         for i in range(max(self.l_bin_id_, 5), min(self.r_bin_id_, self.bins_ - 5)):
