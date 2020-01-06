@@ -158,7 +158,7 @@ class MaysaRoc(object):
             else:
                 features = np.vstack((features, feature))
                 # logging.info("index/count %s/%s", index, count)
-        logging.info("features shape %s", features.shape)
+        logging.info("get_features features shape %s", features.shape)
         return features
 
     def dis(self, vec1, vec2):
@@ -169,7 +169,6 @@ class MaysaRoc(object):
         features = self.get_features(model)
         labels = self.labels
 
-        logging.info("len %s, %s", len(features), len(labels))
         scrub_labels = labels
         distractors_labels = labels
         results = self.dis(features, features)
@@ -190,7 +189,7 @@ class MaysaRoc(object):
 
         logging.info("pos %s neg %s", sum(roc_label), len(roc_label) - sum(roc_label))
         x_labels = []
-        for i in range(-10, 0):
+        for i in range(-5, -1):
             x_labels.append(10 ** i)
         tpr_fpr_table = PrettyTable(['Methods'] + x_labels)
         fig = plt.figure()
