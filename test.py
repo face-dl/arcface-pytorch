@@ -138,6 +138,7 @@ class MaysaRoc(object):
                 except Exception as e:
                     logging.info("pic_id %s no pic", pic_id)
         del pic_db
+        logging.info("MaysaRoc load images %s", len(self.images))
         self.labels = np.array(self.labels)
         self.images = np.array(self.images)
 
@@ -187,8 +188,7 @@ class MaysaRoc(object):
                     roc_label.append(0)
                     roc_score.append(d)
 
-        print("positive ", sum(roc_label))
-        print("negitive ", len(roc_label) - sum(roc_label))
+        logging.info("pos %s neg %s", sum(roc_label), len(roc_label) - sum(roc_label))
         x_labels = []
         for i in range(-10, 0):
             x_labels.append(10 ** i)
@@ -214,8 +214,9 @@ class MaysaRoc(object):
         plt.xscale('log')
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('ROC')
+        plt.title('Maysa ROC for labels 15 images 1317')
         plt.legend(loc="lower right")
+        logging.info("head is fpr, content is tpr/threshold")
         logging.info(tpr_fpr_table)
         fig.savefig(os.path.join(self.file_path, "roc_{}.jpg".format(epoch)))
 
