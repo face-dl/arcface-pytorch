@@ -285,7 +285,31 @@ def torch_model():
 def mx_model():
     import mxnet as mx
     model_name = "model-官方retina"
-    # model_name = "model"
+    model_name = "model-v16-0.00001"
+    model_name = "model"
+    model_name = "model-v28-0.0001"
+    # model_name = "model-v28-0.00001"
+    model_name = "model-v27-0.00001"
+    model_name = "model-v26-0.00001"
+    model_name = "model-v19-0.00001"
+    model_name = "model-v18-0.00001"
+    model_name = "model-v17-0.00001"
+    model_name = "model-v23"
+    model_name = "model-v25-0.00001"
+    model_name = "model-v22-0.00001"
+    model_name = "model-v24-0.00001"
+    model_name = "model-v20-0.00001"
+    model_name = "model-v22-0.0001"
+    model_name = "model-v20-0.0001"
+    model_name = "model-v16-0.0001"
+    model_name = "model-v15-11-0.00001"
+    model_name = "model-v15-9-0.0001"
+    model_name = "model-v15-base-0.00001"
+    model_name = "model-10wan-高斯处理"
+    model_name = "model-maysa高斯处理0.00002"
+    model_name = "model-maysa高斯处理0.002"
+    model_name = "model-maysa训练的模型"
+    model_name = "model-线上版本"
     pretrained = os.path.expanduser('/opt/face/models/insight/v14/{},0'.format(model_name))
     prefix, epoch = pretrained.split(",")
     ctx = mx.gpu()
