@@ -304,7 +304,7 @@ def train_net(args):
     if args.loss == 'focal_loss':
         criterion = FocalLoss(gamma=2)
     else:
-        criterion = torch.nn.CrossEntropyLoss()
+        criterion = torch.nn.CrossEntropyLoss(ignore_index=-1)
 
     if args.network == 'resnet18':
         model = fmobilefacenet.resnet_face18(emb_size=args.emb_size)
@@ -421,6 +421,7 @@ def train_net(args):
                 feat = model(data)
                 feat = feat.data.cpu().numpy()
                 return feat
+
             maysa_roc.roc(feature_func, epoch)
 
 

@@ -1,10 +1,10 @@
-import leveldb
 import logging
 import os
 import random
 from collections import defaultdict
 
 import cv2
+import leveldb
 import numpy as np
 import torch
 import torchvision
@@ -95,7 +95,9 @@ class Dataset(torch_data.Dataset):
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 return torch.from_numpy(img), self.train_labels[label]
             except Exception as e:
+                logger.error(e, exc_info=True)
                 logger.info("pic_id %s no pic", pic_id)
+                return torch.zeros((112, 112, 3)), -1
         else:
             print("get_item error")
             assert False
