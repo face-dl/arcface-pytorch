@@ -230,7 +230,7 @@ def parse_args():
     parser.add_argument('--leveldb_path', default=leveldb_path, help='training set directory')
     # label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
-    label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/left_pictures.labels.37.35_36.processed.v44")
+    label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/left_pictures.labels.37.35_36.processed.v44.sorted")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
@@ -299,7 +299,7 @@ def train_net(args):
     train_dataset = Dataset(args.leveldb_path, args.label_path, min_images=1, max_images=300)
     trainloader = torch_data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
-                                        shuffle=True,
+                                        shuffle=False,
                                         num_workers=args.num_workers)
 
     logging.info('{} train iters per epoch'.format(len(trainloader)))
