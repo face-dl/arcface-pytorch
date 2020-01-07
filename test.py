@@ -6,14 +6,15 @@ Created on 18-5-30 下午4:55
 """
 from __future__ import print_function
 
+import leveldb
 import logging
 import math
 import os
 import pickle
 import time
+from collections import defaultdict
 
 import cv2
-import leveldb
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -122,23 +123,40 @@ class MaysaRoc(object):
         pic_db = leveldb.LevelDB(leveldb_path, max_open_files=100)
         self.images = []
         self.labels = []
+
         with open(label_path, "r") as file:
+            label_probes = defaultdict(list)
+            label_galleries = defaultdict(list)
             lines = file.readlines()
             for index, line in enumerate(lines):
                 item = line.strip().split(",")
-                pic_id, label = item[0], item[1]
+                pic_id, label, is_probe = item[0], item[1], item[2]
                 label = int(label)
                 self.labels.append(label)
+                is_probe = int(is_probe)
+                if is_probe:
+                    label_probes[label].append(index)
+                else:
+                    label_galleries[label].append(index)
                 try:
                     pic_id = str(pic_id).encode('utf-8')
                     data = pic_db.Get(pic_id)
-                    img = cv2.imdecode(np.fromstring(bytes(data), np.uint8), cv2.IMREAD_COLOR)
+                    img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     self.images.append(img)
                 except Exception as e:
                     logging.info("pic_id %s no pic", pic_id)
+
+            search_paires = []
+            for l in label_probes:
+                probes = label_probes[l]
+                galleries = label_galleries[l]
+                for p in probes:
+                    for g in galleries:
+                        search_paires.append((p, g))
+            self.search_paires = search_paires
         del pic_db
-        logging.info("MaysaRoc load images %s", len(self.images))
+        logging.info("MaysaRoc load images %s search_paires %s", len(self.images), len(self.search_paires))
         self.labels = np.array(self.labels)
         self.images = np.array(self.images)
 
@@ -148,10 +166,7 @@ class MaysaRoc(object):
         count = math.ceil(len(self.images) / batch_size)
         for index in range(count):
             images = self.images[index * batch_size:(index + 1) * batch_size, ...]
-            data = torch.from_numpy(images)
-            data = data.to(torch.device("cuda"))
-            output = model(data)
-            feature = output.data.cpu().numpy()
+            feature = model(images)
             feature = feature / np.linalg.norm(feature, axis=1, keepdims=1)
             if features is None:
                 features = feature
@@ -173,6 +188,27 @@ class MaysaRoc(object):
         distractors_labels = labels
         results = self.dis(features, features)
 
+        # cal search
+        search_paires_simes = np.zeros(len(self.search_paires), dtype=np.float32)
+        for i, p in enumerate(self.search_paires):
+            search_paires_simes[i] = results[p[0], p[1]]
+        x_labels = []
+        y_labels = []
+        for i in range(100):
+            th = i * 0.01
+            x_labels.append(th)
+            y_labels.append(np.sum(search_paires_simes > th))
+        fig = plt.figure()
+        plt.plot(x_labels, y_labels, label=('th/count 0.40/%0.4f' % y_labels[40]))
+        plt.xlim([0, 1.0])
+        plt.grid(linestyle='--', linewidth=1)
+        plt.xlabel('th')
+        plt.ylabel('search')
+        plt.title('Maysa rank')
+        plt.legend(loc="lower right")
+        fig.savefig(os.path.join(self.file_path, "rank_{}.jpg".format(epoch)))
+
+        # cal roc
         roc_label = []
         roc_score = []
         for i, distractor_items in enumerate(results):
@@ -189,7 +225,7 @@ class MaysaRoc(object):
 
         logging.info("pos %s neg %s", sum(roc_label), len(roc_label) - sum(roc_label))
         x_labels = []
-        for i in range(-5, 1):
+        for i in range(-10, 1):
             x_labels.append(10 ** i)
         tpr_fpr_table = PrettyTable(['Methods'] + x_labels)
         fig = plt.figure()
@@ -220,18 +256,85 @@ class MaysaRoc(object):
         fig.savefig(os.path.join(self.file_path, "roc_{}.jpg".format(epoch)))
 
 
-if __name__ == '__main__':
+def torch_model():
     from models import fmobilefacenet
     from torch.nn import DataParallel
 
     model = fmobilefacenet.resnet_face18(512)
-    pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
+    model_name = "noise_v26_2020-01-07-00:29:38"
+    # pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
+    # pretrained = os.path.expanduser('./train/noise_2020-01-05-23:39:39_back/resnet18,16')
+    pretrained = os.path.expanduser('./train/{}/resnet18,2'.format(model_name))
     pretrained, iter_cnt = pretrained.split(",")
 
     model = DataParallel(model)
     model.load_state_dict(torch.load(pretrained + '_base_' + str(iter_cnt) + '.pth'))
     model.to(torch.device("cuda"))
-
     model.eval()
-    target = os.path.expanduser("~/datasets/maysa/lfw.bin")
-    lfw_test(model, target, 64)
+
+    def feature_func(images):
+        data = torch.from_numpy(images)
+        data = data.to(torch.device("cuda"))
+        feat = model(data)
+        feat = feat.data.cpu().numpy()
+        return feat
+
+    return model_name, feature_func
+
+
+def mx_model():
+    import mxnet as mx
+    model_name = "model-官方retina"
+    # model_name = "model"
+    pretrained = os.path.expanduser('/opt/face/models/insight/v14/{},0'.format(model_name))
+    prefix, epoch = pretrained.split(",")
+    ctx = mx.gpu()
+
+    def load_checkpoint(prefix, epoch):
+        symbol = mx.sym.load('/opt/face/models/insight/v14/model-symbol.json')
+        save_dict = mx.nd.load('%s-%04d.params' % (prefix, epoch))
+        arg_params = {}
+        aux_params = {}
+        for k, v in save_dict.items():
+            tp, name = k.split(':', 1)
+            if tp == 'arg':
+                arg_params[name] = v
+            if tp == 'aux':
+                aux_params[name] = v
+        return (symbol, arg_params, aux_params)
+
+    sym, arg_params, aux_params = load_checkpoint(prefix, int(epoch))
+    all_layers = sym.get_internals()
+    sym = all_layers['fc1_output']
+    image_size = (112, 112)
+    model = mx.mod.Module(symbol=sym, context=ctx, label_names=None)
+    model.bind(for_training=False, data_shapes=[('data', (1, 3, image_size[0], image_size[1]))])
+    model.set_params(arg_params, aux_params)
+
+    def feature_func(data):
+        data = mx.nd.array(data, ctx=ctx)
+        data = data.transpose((0, 3, 1, 2))
+        db = mx.io.DataBatch(data=(data,))
+        model.forward(db, is_train=False)
+        feat = model.get_outputs()[0].asnumpy()
+        return feat
+
+    return model_name, feature_func
+
+
+if __name__ == '__main__':
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
+    # model_name, feature_func = torch_model()
+    # target = os.path.expanduser("~/datasets/maysa/lfw.bin")
+    # lfw_test(model, target, 64)
+
+    model_name, feature_func = mx_model()
+
+    leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
+    test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
+    roc_path = "roc"
+    if not os.path.exists(roc_path):
+        os.mkdir(roc_path)
+    maysa_roc = MaysaRoc(leveldb_path=leveldb_path, label_path=test_labels, file_path=roc_path, batch_size=64)
+    maysa_roc.roc(feature_func, model_name)

@@ -248,7 +248,7 @@ def parse_args():
 
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
-    parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-06-18:59:18/resnet18,0', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-07-00:29:38/resnet18,2', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
@@ -415,7 +415,13 @@ def train_net(args):
             if args.display:
                 visualizer.display_current_results(iters, acc, name='test_acc')
         if args.test_labels:
-            maysa_roc.roc(model, epoch)
+            def feature_func(images):
+                data = torch.from_numpy(images)
+                data = data.to(torch.device("cuda"))
+                feat = model(data)
+                feat = feat.data.cpu().numpy()
+                return feat
+            maysa_roc.roc(feature_func, epoch)
 
 
 if __name__ == '__main__':
