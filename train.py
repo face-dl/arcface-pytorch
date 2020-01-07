@@ -259,7 +259,7 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
     # 第五与第四迭代几乎无变化，为快速验证,可尝试缩小为3,5,7
-    parser.add_argument('--lr_steps', type=str, default='3,5,7', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='4,7,10', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
