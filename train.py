@@ -236,7 +236,7 @@ def parse_args():
     parser.add_argument('--test_labels', default=test_labels, help='training set directory')
 
     target = os.path.expanduser("~/datasets/maysa/lfw.bin")
-    parser.add_argument('--target', type=str, default="", help='verification targets')
+    parser.add_argument('--target', type=str, default=target, help='verification targets')
     parser.add_argument('--only_val', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--noise_tolerant', default=False, action='store_true', help='if output ce loss')
 
