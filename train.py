@@ -230,7 +230,7 @@ def parse_args():
     parser.add_argument('--leveldb_path', default=leveldb_path, help='training set directory')
     # label_path = os.path.expanduser("/opt/cacher/faces_webface_112x112.labels")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
-    label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/left_pictures.labels.37.35_36.processed.v44.sorted")
+    label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/left_pictures.labels.37.35_36.processed.v44")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
@@ -258,8 +258,8 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    # 第五与第四迭代几乎无变化，为快速验证,可尝试缩小为3,5,7
-    parser.add_argument('--lr_steps', type=str, default='4,7,10', help='steps of lr changing')
+    # 第五与第四迭代几乎无变化，为快速验证,可尝试缩小为3,5,7(4,7,10)
+    parser.add_argument('--lr_steps', type=str, default='3,5,7', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
@@ -299,7 +299,7 @@ def train_net(args):
     train_dataset = Dataset(args.leveldb_path, args.label_path, min_images=1, max_images=300)
     trainloader = torch_data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
-                                        shuffle=False,
+                                        shuffle=True,
                                         num_workers=args.num_workers)
 
     logging.info('{} train iters per epoch'.format(len(trainloader)))
