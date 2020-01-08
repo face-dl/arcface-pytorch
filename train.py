@@ -248,7 +248,7 @@ def parse_args():
 
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-19:56:40/resnet18,10', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='./train/noise_2020-01-04-23:17:15/resnet18,2', help='pretrained model to load')
-    parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-07-00:29:38/resnet18,6', help='pretrained model to load')
+    parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-07-18:51:41/resnet18,0', help='pretrained model to load')
     # parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
     parser.add_argument('--network', default='resnet18', help='specify network')
@@ -257,7 +257,7 @@ def parse_args():
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='weight decay')
 
-    parser.add_argument('--lr_steps', type=str, default='3,6', help='steps of lr changing')
+    parser.add_argument('--lr_steps', type=str, default='2,5', help='steps of lr changing')
     parser.add_argument('--use_se', default=False, action='store_true', help='if output ce loss')
     parser.add_argument('--easy_margin', default=False, action='store_true', help='')
     parser.add_argument('--display', default=False, action='store_true', help='if output ce loss')
