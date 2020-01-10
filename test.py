@@ -262,9 +262,10 @@ def torch_model():
 
     model = fmobilefacenet.resnet_face18(512)
     model_name = "noise_v26_2020-01-07-00:29:38"
+    model_name = "noise_v26_2020-01-08-00:43:31"
     # pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
     # pretrained = os.path.expanduser('./train/noise_2020-01-05-23:39:39_back/resnet18,16')
-    pretrained = os.path.expanduser('./train/{}/resnet18,2'.format(model_name))
+    pretrained = os.path.expanduser('./train/{}/resnet18,6'.format(model_name))
     pretrained, iter_cnt = pretrained.split(",")
 
     model = DataParallel(model)
@@ -287,30 +288,30 @@ def mx_model():
     model_name = "model-官方retina"
     model_name = "model-v16-0.00001"
     model_name = "model"
-    model_name = "model-v28-0.0001"
-    # model_name = "model-v28-0.00001"
-    model_name = "model-v27-0.00001"
-    model_name = "model-v26-0.00001"
-    model_name = "model-v19-0.00001"
-    model_name = "model-v18-0.00001"
-    model_name = "model-v17-0.00001"
-    model_name = "model-v23"
-    model_name = "model-v25-0.00001"
-    model_name = "model-v22-0.00001"
-    model_name = "model-v24-0.00001"
-    model_name = "model-v20-0.00001"
-    model_name = "model-v22-0.0001"
-    model_name = "model-v20-0.0001"
-    model_name = "model-v16-0.0001"
-    model_name = "model-v15-11-0.00001"
+    # model_name = "model-v28-0.0001"
+    # # model_name = "model-v28-0.00001"
+    # model_name = "model-v27-0.00001"
+    # model_name = "model-v26-0.00001"
+    # model_name = "model-v19-0.00001"
+    # model_name = "model-v18-0.00001"
+    # model_name = "model-v17-0.00001"
+    # model_name = "model-v23"
+    # model_name = "model-v25-0.00001"
+    # model_name = "model-v22-0.00001"
+    # model_name = "model-v24-0.00001"
+    # model_name = "model-v20-0.00001"
+    # model_name = "model-v22-0.0001"
+    # model_name = "model-v20-0.0001"
+    # model_name = "model-v16-0.0001"
+    # model_name = "model-v15-11-0.00001"
     model_name = "model-v15-9-0.0001"
-    model_name = "model-v15-base-0.00001"
-    model_name = "model-10wan-高斯处理"
-    model_name = "model-maysa高斯处理0.00002"
-    model_name = "model-maysa高斯处理0.002"
-    model_name = "model-maysa训练的模型"
-    model_name = "model-线上版本"
-    pretrained = os.path.expanduser('/opt/face/models/insight/v14/{},0'.format(model_name))
+    # model_name = "model-v15-base-0.00001"
+    # model_name = "model-10wan-高斯处理"
+    # model_name = "model-maysa高斯处理0.00002"
+    # model_name = "model-maysa高斯处理0.002"
+    # model_name = "model-maysa训练的模型"
+    # model_name = "model-线上版本"
+    pretrained = os.path.expanduser('/opt/face/models/insight/v14/{},343490'.format(model_name))
     prefix, epoch = pretrained.split(",")
     ctx = mx.gpu()
 
@@ -349,11 +350,11 @@ def mx_model():
 if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
-    # model_name, feature_func = torch_model()
+    model_name, feature_func = torch_model()
     # target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     # lfw_test(model, target, 64)
 
-    model_name, feature_func = mx_model()
+    # model_name, feature_func = mx_model()
 
     leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
