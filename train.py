@@ -232,6 +232,7 @@ def parse_args():
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/pictures.labels.37.35_36.processed.v42")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v41")
+    label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v40")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
