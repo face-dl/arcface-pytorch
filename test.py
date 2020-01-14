@@ -262,10 +262,17 @@ def torch_model():
 
     model = fmobilefacenet.resnet_face18(512)
     model_name = "noise_v26_2020-01-07-00:29:38"
-    model_name = "noise_v26_2020-01-08-00:43:31"
+    model_name = "noise_v26_2020-01-08-00:43:31,6"
+    model_name = "noise_v41_2020-01-12-23:13:57,8"
+    model_name = "noise_v42_2020-01-11-21:33:18,8"
+    # model_name = "noise_v43_2020-01-10-15:21:51,7"
+    # model_name = "noise_v44_2020-01-08-19:07:06,8"
+
     # pretrained = os.path.expanduser('./train/noise_2020-01-04-23:17:15/resnet18,2')
     # pretrained = os.path.expanduser('./train/noise_2020-01-05-23:39:39_back/resnet18,16')
-    pretrained = os.path.expanduser('./train/{}/resnet18,6'.format(model_name))
+
+    model_name, epoch = model_name.split(",")
+    pretrained = os.path.expanduser('./train/{}/resnet18,6'.format(model_name, epoch))
     pretrained, iter_cnt = pretrained.split(",")
 
     model = DataParallel(model)
@@ -287,7 +294,7 @@ def mx_model():
     import mxnet as mx
     model_name = "model-官方retina"
     model_name = "model-v16-0.00001"
-    model_name = "model"
+    model_name = "model,0"
     # model_name = "model-v28-0.0001"
     # # model_name = "model-v28-0.00001"
     # model_name = "model-v27-0.00001"
@@ -304,14 +311,14 @@ def mx_model():
     # model_name = "model-v20-0.0001"
     # model_name = "model-v16-0.0001"
     # model_name = "model-v15-11-0.00001"
-    model_name = "model-v15-9-0.0001"
+    model_name = "model-v15-9-0.0001,343490"
     # model_name = "model-v15-base-0.00001"
     # model_name = "model-10wan-高斯处理"
     # model_name = "model-maysa高斯处理0.00002"
     # model_name = "model-maysa高斯处理0.002"
     # model_name = "model-maysa训练的模型"
     # model_name = "model-线上版本"
-    pretrained = os.path.expanduser('/opt/face/models/insight/v14/{},343490'.format(model_name))
+    pretrained = os.path.expanduser('/opt/face/models/insight/v14/{}'.format(model_name))
     prefix, epoch = pretrained.split(",")
     ctx = mx.gpu()
 
@@ -351,14 +358,21 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
     model_name, feature_func = torch_model()
+    # model_name, feature_func = mx_model()
+
     # target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     # lfw_test(model, target, 64)
 
-    # model_name, feature_func = mx_model()
-
     leveldb_path = os.path.expanduser("~/datasets/cacher/pictures")
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
-    roc_path = "roc"
+    test_labels = os.path.expanduser("/opt/face/caches/labels/0371d825c3.labels")
+    test_labels = os.path.expanduser("/opt/face/caches/labels/xm_jinyutixiang.labels")
+    test_labels = os.path.expanduser("/opt/face/caches/labels/xm_chengshizhiguang.labels")
+    test_labels = os.path.expanduser("/opt/face/caches/labels/xm_lucheng.labels")
+    test_labels = os.path.expanduser("/opt/face/caches/labels/xm_jiulongtai.labels")
+
+    project = test_labels.split("/")[-1].split(".")[0]
+    roc_path = "roc_{}".format(project)
     if not os.path.exists(roc_path):
         os.mkdir(roc_path)
     maysa_roc = MaysaRoc(leveldb_path=leveldb_path, label_path=test_labels, file_path=roc_path, batch_size=64)
