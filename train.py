@@ -302,6 +302,7 @@ def train_net(args):
     trainloader = torch_data.DataLoader(train_dataset,
                                         batch_size=args.batch_size,
                                         shuffle=True,
+                                        drop_last=True,
                                         num_workers=args.num_workers)
 
     logging.info('{} train iters per epoch'.format(len(trainloader)))
@@ -426,6 +427,7 @@ def train_net(args):
                 feat = model(data)
                 feat = feat.data.cpu().numpy()
                 return feat
+
             maysa_roc.roc(feature_func, epoch)
 
 
