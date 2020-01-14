@@ -222,25 +222,14 @@ class MaysaRoc(object):
                 if scrub_labels[i] != distractors_labels[j]:
                     roc_label.append(0)
                     roc_score.append(d)
-
         logging.info("pos %s neg %s", sum(roc_label), len(roc_label) - sum(roc_label))
         x_labels = []
         for i in range(-10, 1):
             x_labels.append(10 ** i)
-        tpr_fpr_table = PrettyTable(['Methods'] + x_labels)
         fig = plt.figure()
-
         fpr, tpr, thresholds = roc_curve(roc_label, roc_score, pos_label=1)
         roc_auc = auc(fpr, tpr)
         plt.plot(fpr, tpr, label=('AUC = %0.4f' % roc_auc))
-        tpr_fpr_row = []
-        tpr_fpr_row.append("baseline")
-        for fpr_iter in np.arange(len(x_labels)):
-            tmp = [i + 100 if i < 0 else i for i in fpr - x_labels[fpr_iter]]
-            _, min_index = min(list(zip(tmp, range(len(fpr)))))
-            tpr_fpr_row.append('%.4f/%f' % (tpr[min_index], thresholds[min_index]))
-        tpr_fpr_table.add_row(tpr_fpr_row)
-
         plt.xlim(x_labels[0], x_labels[-1])
         plt.ylim([0, 1.0])
         plt.grid(linestyle='--', linewidth=1)
@@ -252,8 +241,17 @@ class MaysaRoc(object):
         plt.title('Maysa ROC for labels 15 images 1317')
         plt.legend(loc="lower right")
         logging.info("head is fpr, content is tpr/threshold")
-        logging.info(tpr_fpr_table)
         fig.savefig(os.path.join(self.file_path, "roc_{}.jpg".format(epoch)))
+
+        # tpr_fpr_table = PrettyTable(['Methods'] + x_labels)
+        # tpr_fpr_row = []
+        # tpr_fpr_row.append("baseline")
+        # for fpr_iter in np.arange(len(x_labels)):
+        #     tmp = [i + 100 if i < 0 else i for i in fpr - x_labels[fpr_iter]]
+        #     _, min_index = min(list(zip(tmp, range(len(fpr)))))
+        #     tpr_fpr_row.append('%.4f/%f' % (tpr[min_index], thresholds[min_index]))
+        # tpr_fpr_table.add_row(tpr_fpr_row)
+        # logging.info(tpr_fpr_table)
 
 
 def torch_model():
@@ -354,11 +352,34 @@ def mx_model():
     return model_name, feature_func
 
 
+def merge_all_label():
+    test_labels = []
+    test_labels.append(os.path.expanduser("~/datasets/cacher/xm_bailujun.labels"))
+    test_labels.append(os.path.expanduser("/opt/face/caches/labels/0371d825c3.labels"))
+    test_labels.append(os.path.expanduser("/opt/face/caches/labels/xm_jinyutixiang.labels"))
+    test_labels.append(os.path.expanduser("/opt/face/caches/labels/xm_chengshizhiguang.labels"))
+    test_labels.append(os.path.expanduser("/opt/face/caches/labels/xm_lucheng.labels"))
+    test_labels.append(os.path.expanduser("/opt/face/caches/labels/xm_jiulongtai.labels"))
+
+    all_target = os.path.expanduser("/opt/face/caches/labels/all.labels")
+
+    with open(all_target, "w") as target:
+        for dataset_index, label_path in enumerate(test_labels):
+            with open(label_path, "r") as file:
+                lines = file.readlines()
+                for index, line in enumerate(lines):
+                    item = line.strip().split(",")
+                    pic_id, label, is_probe = item[0], item[1], item[2]
+                    label = int(label)
+                    label += dataset_index * 10000
+                    target.write("{},{},{}\n".format(pic_id, label, is_probe))
+
+
 if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
-    model_name, feature_func = torch_model()
-    # model_name, feature_func = mx_model()
+    # model_name, feature_func = torch_model()
+    model_name, feature_func = mx_model()
 
     # target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     # lfw_test(model, target, 64)
@@ -370,6 +391,9 @@ if __name__ == '__main__':
     test_labels = os.path.expanduser("/opt/face/caches/labels/xm_chengshizhiguang.labels")
     test_labels = os.path.expanduser("/opt/face/caches/labels/xm_lucheng.labels")
     test_labels = os.path.expanduser("/opt/face/caches/labels/xm_jiulongtai.labels")
+
+    # merge_all_label()
+    test_labels = os.path.expanduser("/opt/face/caches/labels/all.labels")
 
     project = test_labels.split("/")[-1].split(".")[0]
     roc_path = "roc_{}".format(project)
