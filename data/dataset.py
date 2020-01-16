@@ -96,7 +96,7 @@ class Dataset(torch_data.Dataset):
                 return torch.from_numpy(img), self.train_labels[label]
             except Exception as e:
                 logger.info("pic_id %s no pic", pic_id)
-                img = np.ones(112, 112, 3)
+                img = np.ones((112, 112, 3))
                 return torch.from_numpy(img), -1
 
         else:
