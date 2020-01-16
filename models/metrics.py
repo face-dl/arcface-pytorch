@@ -246,8 +246,7 @@ class ArcMarginProduct(nn.Module):
 
         self.easy_margin = easy_margin
         self.noise_tolerant = noise_tolerant
-        if noise_tolerant:
-            self.nt = NoiseTolerant(file_path)
+        self.nt = NoiseTolerant(file_path)
         self.cos_m = math.cos(m)
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)
@@ -268,9 +267,11 @@ class ArcMarginProduct(nn.Module):
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+
+        w = self.nt.get_mul_weight(cosine, label)
         if self.noise_tolerant:
-            w = self.nt.get_mul_weight(cosine, label)
             output *= w.unsqueeze(dim=1).cuda()
+
         output *= self.s
         return (cosine, output)
 
