@@ -410,6 +410,7 @@ def train_net(args):
                     sw.add_scalar("theta", mean_theta, iters)
                     sw.add_scalar("acc", acc, iters)
                     sw.add_scalar("real_acc", real_acc, iters)
+                    sw.add_scalar("lr", optimizer.param_groups[0]['lr'], iters)
 
             # noise.save_epoch(epoch)
             save_model(model, metric_fc, file_path, args.network, epoch)
@@ -420,6 +421,8 @@ def train_net(args):
             acc = lfw_test(model, args.target, args.batch_size)
             if args.display:
                 visualizer.display_current_results(iters, acc, name='test_acc')
+
+            sw.add_scalar("lfw", 0, iters)
         if args.test_labels:
             def feature_func(images):
                 data = torch.from_numpy(images)
@@ -427,8 +430,8 @@ def train_net(args):
                 feat = model(data)
                 feat = feat.data.cpu().numpy()
                 return feat
-
             maysa_roc.roc(feature_func, epoch)
+            sw.add_scalar("lfw", 0, iters)
 
 
 if __name__ == '__main__':
