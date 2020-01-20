@@ -18,7 +18,6 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from prettytable import PrettyTable
 from sklearn.metrics import roc_curve, auc
 
 
@@ -254,15 +253,15 @@ class MaysaRoc(object):
         # logging.info(tpr_fpr_table)
 
 
-def torch_model():
+def torch_model(model_name):
     from models import fmobilefacenet
     from torch.nn import DataParallel
 
     model = fmobilefacenet.resnet_face18(512)
-    model_name = "noise_v26_2020-01-07-00:29:38"
-    model_name = "noise_v26_2020-01-08-00:43:31,6"
-    model_name = "noise_v41_2020-01-12-23:13:57,8"
-    model_name = "noise_v42_2020-01-11-21:33:18,8"
+    # model_name = "noise_v26_2020-01-07-00:29:38"
+    # model_name = "noise_v26_2020-01-08-00:43:31,6"
+    # model_name = "noise_v41_2020-01-12-23:13:57,8"
+    # model_name = "noise_v42_2020-01-11-21:33:18,8"
     # model_name = "noise_v43_2020-01-10-15:21:51,7"
     # model_name = "noise_v44_2020-01-08-19:07:06,8"
 
@@ -379,7 +378,7 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
     # model_name, feature_func = torch_model()
-    model_name, feature_func = mx_model()
+    # model_name, feature_func = mx_model()
 
     # target = os.path.expanduser("~/datasets/maysa/lfw.bin")
     # lfw_test(model, target, 64)
@@ -399,5 +398,9 @@ if __name__ == '__main__':
     roc_path = "roc_{}".format(project)
     if not os.path.exists(roc_path):
         os.mkdir(roc_path)
-    maysa_roc = MaysaRoc(leveldb_path=leveldb_path, label_path=test_labels, file_path=roc_path, batch_size=64)
-    maysa_roc.roc(feature_func, model_name)
+
+    for model_config in ["noise_v26_2020-01-08-00:43:31,6", "noise_v40_2020-01-14-18:06:48,8", "noise_v41_2020-01-12-23:13:57,8", "noise_v42_2020-01-11-21:33:18,8",
+                         "noise_v43_2020-01-10-15:21:51,8", "noise_v44_2020-01-08-19:07:06,8"]:
+        model_name, feature_func = torch_model(model_config)
+        maysa_roc = MaysaRoc(leveldb_path=leveldb_path, label_path=test_labels, file_path=roc_path, batch_size=64)
+        maysa_roc.roc(feature_func, model_name)
