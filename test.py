@@ -251,6 +251,7 @@ class MaysaRoc(object):
         #     tpr_fpr_row.append('%.4f/%f' % (tpr[min_index], thresholds[min_index]))
         # tpr_fpr_table.add_row(tpr_fpr_row)
         # logging.info(tpr_fpr_table)
+        return y_labels[40], roc_auc
 
 
 def torch_model(model_name):
@@ -399,8 +400,12 @@ if __name__ == '__main__':
     if not os.path.exists(roc_path):
         os.mkdir(roc_path)
 
+    datas = []
     for model_config in ["noise_v26_2020-01-08-00:43:31,6", "noise_v40_2020-01-14-18:06:48,8", "noise_v41_2020-01-12-23:13:57,8", "noise_v42_2020-01-11-21:33:18,8",
                          "noise_v43_2020-01-10-15:21:51,8", "noise_v44_2020-01-08-19:07:06,8"]:
         model_name, feature_func = torch_model(model_config)
         maysa_roc = MaysaRoc(leveldb_path=leveldb_path, label_path=test_labels, file_path=roc_path, batch_size=64)
-        maysa_roc.roc(feature_func, model_name)
+        count, roc_auc = maysa_roc.roc(feature_func, model_name)
+        datas.append([count, roc_auc])
+
+    logging.info("datas %s", datas)
