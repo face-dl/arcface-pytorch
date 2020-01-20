@@ -315,6 +315,17 @@ def resnet50(pretrained=False, **kwargs):
     return model
 
 
+def resnet100(pretrained=False, **kwargs):
+    """Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 13, 30, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet100']))
+    return model
+
+
 def resnet101(pretrained=False, **kwargs):
     """Constructs a ResNet-101 model.
     Args:

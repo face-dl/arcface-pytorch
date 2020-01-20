@@ -232,7 +232,7 @@ def parse_args():
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v16")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.high.labels.37/pictures.labels.37.35_36.processed.v42")
     label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/left_pictures.labels.35.33_34.processed.v41")
-    label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/pictures.labels.35.33_34.processed.v40")
+    # label_path = os.path.expanduser("~/datasets/cacher/pictures.labels.35/pictures.labels.35.33_34.processed.v40")
     parser.add_argument('--label_path', default=label_path, help='training set directory')
 
     test_labels = os.path.expanduser("~/datasets/cacher/xm_bailujun.labels")
@@ -244,7 +244,7 @@ def parse_args():
     parser.add_argument('--noise_tolerant', default=False, action='store_true', help='if output ce loss')
 
     parser.add_argument('--lr', type=float, default=0.1, help='start learning rate')
-    parser.add_argument('--batch_size', type=int, default=96, help='batch size in each context')
+    parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
     parser.add_argument('--num_workers', type=int, default=4, help='batch size in each context')
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
@@ -254,7 +254,7 @@ def parse_args():
     # parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-07-00:29:38/resnet18,6', help='pretrained model to load')
     parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
-    parser.add_argument('--network', default='resnet18', help='specify network')
+    parser.add_argument('--network', default='resnet100', help='specify network')
     parser.add_argument('--optimizer', default='sgd', help='specify network')
     parser.add_argument('--margin_s', type=float, default=64.0, help='scale for feature')
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
@@ -318,6 +318,8 @@ def train_net(args):
         model = resnet.resnet34()
     elif args.network == 'resnet50':
         model = resnet.resnet50()
+    elif args.network == 'resnet100':
+        model = resnet.resnet100()
 
     num_classes = train_dataset.label_len
     if args.metric == 'add_margin':
@@ -430,6 +432,7 @@ def train_net(args):
                 feat = model(data)
                 feat = feat.data.cpu().numpy()
                 return feat
+
             maysa_roc.roc(feature_func, epoch)
             sw.add_scalar("lfw", 0, iters)
 
