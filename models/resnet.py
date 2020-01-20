@@ -91,7 +91,7 @@ class IRBlock(nn.Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.prelu(out)
+        # out = self.prelu(out)
 
         return out
 
@@ -154,15 +154,15 @@ class SEBlock(nn.Module):
 
 
 class ResNetFace(nn.Module):
-    def __init__(self, block, layers, use_se=True):
+    def __init__(self, block, layers, use_se=False):
         self.inplanes = 64
         self.use_se = use_se
         super(ResNetFace, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.prelu = nn.PReLU()
-        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.layer1 = self._make_layer(block, 64, layers[0])
+        # self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=2)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
@@ -205,7 +205,7 @@ class ResNetFace(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.prelu(x)
-        x = self.maxpool(x)
+        # x = self.maxpool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
