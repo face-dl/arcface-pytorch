@@ -245,7 +245,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=0.1, help='start learning rate')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size in each context')
-    parser.add_argument('--num_workers', type=int, default=4, help='batch size in each context')
+    parser.add_argument('--num_workers', type=int, default=1, help='batch size in each context')
     parser.add_argument('--loss', type=str, default="focal_loss", help='batch size in each context')
     parser.add_argument('--metric', type=str, default="arc_margin", help='batch size in each context')
 
