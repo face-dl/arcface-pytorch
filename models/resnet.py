@@ -158,7 +158,7 @@ class ResNetFace(nn.Module):
         self.inplanes = 64
         self.use_se = use_se
         super(ResNetFace, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.prelu = nn.PReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -168,7 +168,7 @@ class ResNetFace(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.bn4 = nn.BatchNorm2d(512)
         self.dropout = nn.Dropout()
-        self.fc5 = nn.Linear(512 * 8 * 8, 512)
+        self.fc5 = nn.Linear(512 * 7 * 7, 512)
         self.bn5 = nn.BatchNorm1d(512)
 
         for m in self.modules():
@@ -227,7 +227,9 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         # self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
         #                        bias=False)
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1,
+        # self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1,
+        #                        bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -265,6 +267,10 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        x = x.float() - 127.5
+        x = x * 0.0078125
+        x = x.permute(0, 3, 1, 2)
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -320,7 +326,7 @@ def resnet100(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 13, 30, 3], **kwargs)
+    model = ResNetFace(IRBlock, [3, 13, 30, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet100']))
     return model
