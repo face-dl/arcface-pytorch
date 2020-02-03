@@ -254,7 +254,7 @@ def parse_args():
     # parser.add_argument('--pretrained', default='./train/noise_v26_2020-01-07-00:29:38/resnet18,6', help='pretrained model to load')
     parser.add_argument('--pretrained', default='', help='pretrained model to load')
 
-    parser.add_argument('--network', default='resnet50', help='specify network')
+    parser.add_argument('--network', default='resnet100', help='specify network')
     parser.add_argument('--optimizer', default='sgd', help='specify network')
     parser.add_argument('--margin_s', type=float, default=64.0, help='scale for feature')
     parser.add_argument('--margin_m', type=float, default=0.5, help='margin for loss,')
